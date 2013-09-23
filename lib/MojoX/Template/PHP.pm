@@ -17,6 +17,7 @@ has encoding => 'UTF-8';
 #has escape => sub { \&Mojo::Util::xml_escape };
 has name => 'template.php';
 has namespace => 'MojoX::Template::PHPSandbox';
+has template => "";
 
 
 #sub build {
@@ -26,10 +27,40 @@ has namespace => 'MojoX::Template::PHPSandbox';
 
 sub interpret {
     my $self = shift;
+    my $c = shift // {};
     local $SIG{__DIE__} = sub {
 	CORE::die($_[0]) if ref $_[0];
 	Mojo::Exception->throw( shift, [ $self->template, $self->code ] );
     };
+
+    # prepare global variables for the PHP interpreter
+    my $variables_order = PHP::eval_return( "ini_get('variables_order')" );
+    my $cookie_params = { };
+    my $params = { };
+    if ($c) {
+	$params = { %{$c->{stash}}, c => $c };
+    }
+
+    if ($variables_order =~ /S/) {
+	$params->{_SERVER} = $self->_server_params($c);
+	$params->{_ENV} = \%ENV;
+    } elsif ($variables_order =~ /E/) {
+	$params->{_ENV} = \%ENV;
+    }
+    if ($variables_order =~ /C/) {
+	$cookie_params = $self->_cookie_params($c);
+	$params->{_COOKIE} = $cookie_params;
+    }
+    # FIXME LATER: $params->{_FILES} = $self->_process_uploads($c);
+    $self->_set_method_params( $c, $params, $variables_order );
+
+    while (my ($param_name, $param_value) = each %$params) {
+	PHP::assign_global($param_name, $param_value);
+    }
+    $c && $c->stash( 'php_params', $params );
+
+    # TODO:  include_path
+
     my $OUTPUT;
     my $ERROR;
     my $HEADER;
@@ -46,11 +77,164 @@ sub interpret {
     return Mojo::Exception->new( $@, [$self->template, $self->code] );
 }
 
+sub _cookie_params {
+    my ($self, $c) = @_;
+    if (@{$c->req->cookies}) {
+	$DB::single = 1;
+    }
+    # Mojo: $c->req->cookies is [], in Catalyst it is {}
+    my $p = { map {;
+		 $_ => $c->req->cookies->{$_}{value}[0]
+	      } @{$c->req->cookies} };
+    return $p;
+}
+
+sub _server_params {
+    use Socket;
+    use Sys::Hostname;
+    my ($self, $c) = @_;
+
+    my $tx = $c->tx;
+    my $req = $c->req;
+    my $headers = $req->headers;
+
+    # see  Mojolicious::Plugin::CGI
+    return {
+	CONTENT_LENGTH => $headers->content_length || 0,
+	CONTENT_TYPE => $headers->content_type || 0,
+	GATEWAY_INTERFACE => 'PHP/5.x',
+	HTTP_COOKIE => $headers->cookie || '',
+	HTTP_HOST => $headers->host || '',
+	HTTP_REFERER => $headers->referrer || '',
+	HTTP_USER_AGENT => $headers->user_agent || '',
+	HTTPS => $req->is_secure ? 'YES' : 'NO',
+	PATH_INFO => $req->url->path,
+	QUERY_STRING => $req->url->query->to_string,
+	REMOTE_ADDR => $tx->remote_address,
+	REMOTE_HOST => gethostbyaddr( inet_aton( $tx->remote_address ), AF_INET ) || '',
+	REMOTE_PORT => $tx->remote_port,
+	REQUEST_METHOD => $req->method,
+	SERVER_NAME => hostname,
+	SERVER_PORT => $tx->local_port,
+	SERVER_PROTOCOL => $req->is_secure ? 'HTTPS' : 'HTTP',
+	SERVER_SOFTWARE => __PACKAGE__
+    };
+}
+
+sub _php_method_params {
+    my ($query, @order) = @_;
+    my $existing_params = {};
+    foreach my $name ($query->param) { # 23,29,34,35,43,44,45,49
+	my @p = $query->param($name);
+	$existing_params->{$name} = @p > 1 ? $p[-1] : $p[0];
+    }
+
+    # The conventional ways to parse input parameters with Perl (CGI/Catalyst)
+    # are different from the way that PHP parses the input. Some examples:
+    #
+    # 1. foo=first&foo=second&foo=lats
+    #
+    #    In Perl, value for the parameter 'foo' is an array ref with 3 values
+    #    In PHP, value for param 'foo' is 'last', whatever the last value was
+    #    See also example #5
+    #
+    # 2. foo[bar]=value1&foo[baz]=value2
+    #
+    #    In Perl, this creates scalar parameters 'foo[bar]' and 'foo[baz]'
+    #    In PHP, this creates the parameter 'foo' with an associative array
+    #            value ('bar'=>'value1', 'baz'=>'value2')
+    #
+    # 3. foo[bar]=value1&foo=value2&foo[baz]=value3
+    #
+    #    In Perl, this creates parameters 'foo[bar]', 'foo', and 'foo[baz]'
+    #    In PHP, this create the parameter 'foo' with an associative array
+    #            with value ('baz'=>'value3'). The values associated with
+    #            'foo[bar]' and 'foo' are lost.
+    #
+    # 4. foo[2][bar]=value1&foo[2][baz]=value2
+    #
+    #    In Perl, this creates parameters 'foo[2][bar]' and 'foo[2][baz]'
+    #    In PHP, this creates a 2-level hash 'foo'
+    #
+    # 5. foo[]=123&foo[]=234&foo[]=345
+    #    In Perl, parameter 'foo[]' assigned to array ref [123,234,345]
+    #    In PHP, parameter 'foo' is an array with elem (123,234,345)
+    #
+    # For a given set of Perl-parsed parameter input, this function returns
+    # a hashref that resembles what the same parameters would look like
+    # to PHP.
+
+    my $new_params = {};
+    foreach my $pp (@order) {
+	my $p = $pp;
+	if ($p =~ s/\[(.+)\]$//) {
+	    my $key = $1;
+	    s/%(..)/chr hex $1/ge for $p, $pp, $key;
+
+	    if ($key ne '' && $new_params->{$p}
+		    && ref($new_params->{$p} ne 'HASH')) {
+		$new_params->{$p} = {};
+	    }
+
+	    # XXX - how to generalize this from 2 to n level deep hash?
+	    if ($key =~ /\]\[/) {
+		my ($key1, $key2) = split /\]\[/, $key;
+		$new_params->{$p}{$key1}{$key2} = $existing_params->{$pp};
+	    } else {
+		$new_params->{$p}{$key} = $existing_params->{$pp};
+	    }
+	} elsif ($p =~ s/\[\]$//) {
+	    # expect $existing_params->{$pp} to already be an array ref
+	    $p =~ s/%(..)/chr hex $1/ge;
+	    $new_params->{$p} = $existing_params->{$pp};
+	} else {
+	    $p =~ s/%(..)/chr hex $1/ge;
+	    $new_params->{$p} = $existing_params->{$p};
+	    if ('ARRAY' eq ref $new_params->{$p}) {
+		$new_params->{$p} = $new_params->{$p}[-1];
+	    }
+	}
+    }
+    return $new_params;
+}
+
+sub _set_method_params {
+    my ($self, $c, $params, $var_order) = @_;
+    my $order = PHP::eval_return( 'ini_get("request_order")' ) || $var_order;
+    $params->{$_} = {} for qw(_GET _POST _REQUEST);
+    if ($var_order =~ /G/) {
+	my $query = $c->req->url && $c->req->url->query;
+	if ($query) {
+	    $query =~ s/%(5[BD])/chr hex $1/ge;
+	    my @order = map { s/=.*//; $_ } split /&/, $query;
+	    $params->{_GET} = _php_method_params(
+		 $c->req->url->query, @order );
+	}
+    }
+
+    # TODO: $var_order =~ /P/ && method eq 'POST'
+
+    $params->{_REQUEST} = {};
+    foreach my $reqvar (split //, uc $order) {
+	if ($reqvar eq 'C') {
+	    $params->{_REQUEST} = { %{$params->{_REQUEST}}, 
+				    %{$params->{_COOKIE}} };
+	} elsif ($reqvar eq 'G') {
+	    $params->{_REQUEST} = { %{$params->{_REQUEST}}, 
+				    %{$params->{_GET}} };
+	} elsif ($reqvar eq 'P') {
+	    $params->{_REQUEST} = { %{$params->{_REQUEST}}, 
+				    %{$params->{_POST}} };
+	}
+    }
+    return;
+}
+
 sub render {
     my $self = shift;
     my $c = pop if @_ && ref $_[-1];
     $self->code( join '', @_ );
-    return $self->interpret;
+    return $self->interpret($c);
 }
 
 sub render_file {
@@ -58,7 +242,7 @@ sub render_file {
     $self->name($path) unless defined $self->{name};
     my $template = slurp $path;
     my $encoding = $self->encoding;
-    return $self->render($template);
+    return $self->render($template, @_);
 }
 
 unless (caller) {

@@ -37,6 +37,48 @@ ok( $content =~ /_ENV = array/ &&
     $content !~ /_ENV = array *\(\s*\)/, '$_ENV not empty' );
 ok( $content =~ /_COOKIE = array *\(\s*\)/, '$_COOKIE is empty' );
 
+# when PHP receives a duplicate value, it should ignore all values 
+# except the last one
+$t->get_ok('/vars.php?abc=123&def=456&abc=789')->status_is(200, 'vars.php request (2) query');
+$content = $t->tx->res->body;
+ok( $content !~ /_GET = array *\(\s*\)/, '$_GET not empty' ); 
+ok( $content !~ /_GET.*abc.*=.*123.*_POST/s, 'lost first val for $_GET["abc"]');
+ok( $content =~ /_GET.*abc.*=.*789.*_POST/s, 'got last val for $_GET["abc"]');
+ok( $content =~ /_GET.*def.*=.*456.*_POST/s, '$_GET["def"] ok');
+ok( $content =~ /_POST = array *\(\s*\)/, '$_POST is empty' );
+ok( $content !~ /_REQUEST = array *\(\s*\)/, '$_REQUEST not empty' );
+ok( $content !~ /_REQUEST.*abc.*=.*123.*_SERVER/s &&
+    $content =~ /_REQUEST.*abc.*=.*789.*_SERVER/s &&
+    $content =~ /_REQUEST.*def.*=.*456.*_SERVER/s, '$_REQUEST mimics $_GET' );
+ok( $content =~ /_SERVER = array/ &&
+    $content !~ /_SERVER = array *\(\s*\)/, '$_SERVER not empty' );
+ok( $content =~ /_ENV = array/ &&
+    $content !~ /_ENV = array *\(\s*\)/, '$_ENV not empty' );
+ok( $content =~ /_COOKIE = array *\(\s*\)/, '$_COOKIE is empty' );
+
+
+# When PHP receives a param name like  foo[bar] , it creates an 
+# associative array param named foo with key bar.
+$t->get_ok('/vars.php?foo[x]=1&foo[y]=2&foo[z]=3')->status_is(200);
+$content = $t->tx->res->body;
+ok( $content !~ /_GET = array *\(\s*\)/, '$_GET not empty' ); 
+my $z = $content =~ /_GET.*foo(.*)\$_POST/s;
+my $foo = $1;
+ok( $z, '$_GET["foo"] was set' );
+ok( $foo =~ /array/, '$_GET["foo"] was set to a PHP array' );
+ok( $foo =~ /x.*1/, '$_GET["foo"]["x"] was set' );
+ok( $foo =~ /y.*2/, '$_GET["foo"]["y"] was set' );
+ok( $foo =~ /z.*3/, '$_GET["foo"]["z"] was set' );
+ok( $content =~ /_POST = array *\(\s*\)/, '$_POST is empty' );
+ok( $content !~ /_REQUEST = array *\(\s*\)/, '$_REQUEST not empty' );
+ok( $content !~ /_REQUEST.*abc.*=.*123.*_SERVER/s &&
+    $content =~ /_REQUEST.*foo.*array.*z.*3.*_SERVER/s,
+    '$_REQUEST mimics $_GET' );
+ok( $content =~ /_SERVER = array/ &&
+    $content !~ /_SERVER = array *\(\s*\)/, '$_SERVER not empty' );
+ok( $content =~ /_ENV = array/ &&
+    $content !~ /_ENV = array *\(\s*\)/, '$_ENV not empty' );
+ok( $content =~ /_COOKIE = array *\(\s*\)/, '$_COOKIE is empty' );
 
 
 done_testing();

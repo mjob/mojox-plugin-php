@@ -42,7 +42,6 @@ sub _before_dispatch_hook {
 sub _after_static_hook {
     use Data::Dumper;
     my $c = shift;
-	$DB::single = 1;
     if ($c->req->url->path =~ /\.php$/) {
 	local $Data::Dumper::Indent = 1;
 	local $Data::Dumper::Sortkeys = 1;
@@ -56,7 +55,6 @@ sub _after_static_hook {
 
 sub _before_routes_hook {
     my $c = shift;
-    $DB::single = 1;
     if ($c->stash('mojox.php')) {
 	$c->req->url->path('/hello11');
     }
@@ -68,8 +66,8 @@ sub _before_routes_hook {
 sub _php_controller {
     my $self = shift;
     my $template = $self->param( $php_template_pname );
+    $self->param( $php_template_pname, undef );
     $self->req->url->path( $self->req->{__old_path} );
-    $DB::single = 1;
     $self->render( template => $template, handler => 'php' );
 }
 
@@ -114,7 +112,7 @@ sub _php {
 	$mt->encoding( $renderer->encoding ) if $renderer->encoding;
 #	return undef unless my $t = $renderer->template_name($options);
 	return undef unless my $t = _template_name($renderer, $c, $options);
-	$DB::single = 1;
+
 	if (-r $path) {
 	    $log->debug( "Rendering template '$t'." );
 	    $$output = $mt->name("template '$t'")->render_file($path,$c);
