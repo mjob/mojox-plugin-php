@@ -10,6 +10,12 @@ use constant DEBUG =>
     $ENV{MOJO_TEMPLATE_DEBUG} || $ENV{MOJOX_TEMPLATE_PHP_DEBUG} || 0;
 
 our $VERSION = '0.01';
+our @header_callbacks;
+
+sub register_header_callback {
+    my ($regex, $callback) = @_;
+    push @header_callbacks, [ $regex, $callback ];
+}
 
 #has [qw(auto_escape compiled)];
 has [qw(code)] => '';
@@ -26,6 +32,7 @@ sub interpret {
 	CORE::die($_[0]) if ref $_[0];
 	Mojo::Exception->throw( shift, [ $self->template, $self->code ] );
     };
+    PHP::__reset;
 
     # prepare global variables for the PHP interpreter
     my $variables_order = PHP::eval_return( "ini_get('variables_order')" );
@@ -80,7 +87,24 @@ sub interpret {
     my $HEADER;
     PHP::options( stdout => sub { $OUTPUT .= $_[0]; } );
     PHP::options( stderr => sub { $ERROR .= $_[0]; } );
-    PHP::options( header => sub { $HEADER .= "$_[0]\n" } );
+    PHP::options( header => 
+		  sub { 
+		      my ($keyval, $replace) = @_;
+		      my ($key,$val) = split /: /, $keyval, 2;
+		      my $keep = 1;
+		      foreach my $hcb (@header_callbacks) {
+			  if ($keyval =~ $hcb->[0]) {
+			      $keep &&= $hcb->[1]->($key,$val);
+			  }
+		      }
+		      if ($replace) {
+			  $c->res->headers->header($key,$val);
+		      } else {
+			  $c->res->headers->add($key,$val);
+		      }
+		  }
+	);
+
 
 #   print STDERR "PHP interpreter receiving code: ", $self->code, "\n\n";
 
