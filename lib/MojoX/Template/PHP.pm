@@ -92,6 +92,8 @@ sub _server_params {
     my $req = $c->req;
     my $headers = $req->headers;
 
+    $DB::single = 1;
+
     # see  Mojolicious::Plugin::CGI
     return {
 	CONTENT_LENGTH => $headers->content_length || 0,
@@ -102,12 +104,13 @@ sub _server_params {
 	HTTP_REFERER => $headers->referrer || '',
 	HTTP_USER_AGENT => $headers->user_agent || '',
 	HTTPS => $req->is_secure ? 'YES' : 'NO',
-	PATH_INFO => $req->url->path,
+	PATH_INFO => $req->{__old_path} || $req->url->path->to_string,
 	QUERY_STRING => $req->url->query->to_string,
 	REMOTE_ADDR => $tx->remote_address,
 	REMOTE_HOST => gethostbyaddr( inet_aton( $tx->remote_address ), AF_INET ) || '',
 	REMOTE_PORT => $tx->remote_port,
 	REQUEST_METHOD => $req->method,
+	REQUEST_URI => $req->url->path->to_string,
 	SERVER_NAME => hostname,
 	SERVER_PORT => $tx->local_port,
 	SERVER_PROTOCOL => $req->is_secure ? 'HTTPS' : 'HTTP',

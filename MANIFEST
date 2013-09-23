@@ -8,6 +8,7 @@ t/00-load.t
 t/01-view.t
 t/03-get.t
 t/04-post.t
+t/05-server.t
 t/manifest.t
 t/pod-coverage.t
 t/pod.t

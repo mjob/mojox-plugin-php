@@ -34,8 +34,9 @@ sub _before_dispatch_hook {
     use Data::Dumper;
     my $c = shift;
     if ($c->req->url->path =~ /\.php$/) {
+	$DB::single = 1;
 	my $old_path = $c->req->url->path;
-	$c->req->{__old_path} = $old_path;
+	$c->req->{__old_path} = $old_path->to_string;
 	$c->req->url->path( $php_req_handler_path . $old_path );
 #	print STDERR "Controller is ", Dumper($c);
     }
