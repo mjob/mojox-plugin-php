@@ -12,7 +12,7 @@ our $VERSION = '0.01';
 my $php_req_handler_path = sprintf "/php-handler-%07x", 0x10000000 * rand();
 my $php_template_pname = sprintf "template_%07x", 0x10000000 * rand();
 
-sub php_template_pname { return $php_template_pname; }
+sub _php_template_pname { return $php_template_pname; }
 
 sub register {
     my ($self, $app, $config) = @_;

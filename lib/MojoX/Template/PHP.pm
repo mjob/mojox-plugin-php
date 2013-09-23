@@ -118,9 +118,10 @@ sub _server_params {
 sub _php_method_params {
     my ($query, @order) = @_;
     my $existing_params = {};
-    foreach my $name ($query->param) { # 23,29,34,35,43,44,45,49
+    foreach my $name ($query->param) {
 	my @p = $query->param($name);
-	$existing_params->{$name} = @p > 1 ? $p[-1] : $p[0];
+#	$existing_params->{$name} = @p > 1 ? $p[-1] : $p[0];
+	$existing_params->{$name} = @p > 1 ? [ @p ] : $p[0];
     }
 
     # The conventional ways to parse input parameters with Perl (CGI/Catalyst)
@@ -190,7 +191,7 @@ sub _php_method_params {
 	    }
 	}
     }
-    delete $new_params->{ MojoX::Plugin::PHP->php_template_pname };
+    delete $new_params->{ MojoX::Plugin::PHP->_php_template_pname };
     return $new_params;
 }
 
@@ -351,6 +352,15 @@ newline characters, or error messages might end up being wrong.
 
 Namespace used to compile templates, defaults to
 C<MojoX::Template::PHPSandbox>. 
+
+=head2 template
+
+    my $template = $mt->template;
+    $mt = $mt->template( $template_name );
+
+Should contain the name of the template currently being processed,
+but I don't think it is ever set to anything now. This value will
+appear in exception messages.
 
 =head1 METHODS
 
