@@ -19,12 +19,6 @@ has name => 'template.php';
 has namespace => 'MojoX::Template::PHPSandbox';
 has template => "";
 
-
-#sub build {
-#    my $self = shift;
-#    return $self;
-#}
-
 sub interpret {
     my $self = shift;
     my $c = shift // {};
@@ -195,6 +189,7 @@ sub _php_method_params {
 	    }
 	}
     }
+    delete $new_params->{ MojoX::Plugin::PHP->php_template_pname };
     return $new_params;
 }
 
@@ -213,6 +208,12 @@ sub _set_method_params {
     }
 
     # TODO: $var_order =~ /P/ && method eq 'POST'
+    $DB::single = 1;
+    if ($var_order =~ /P/ && $c->req->method eq 'POST') {
+	$DB::single = 1;
+	my $order = [ $c->req->params->param ];
+	$params->{_POST} = _php_method_params( $c, @$order );
+    }
 
     $params->{_REQUEST} = {};
     foreach my $reqvar (split //, uc $order) {

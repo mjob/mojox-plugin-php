@@ -19,7 +19,8 @@ ok( $content =~ /_ENV = array/ &&
 ok( $content =~ /_COOKIE = array *\(\s*\)/, '$_COOKIE is empty' );
 
 
-$t->post_ok( '/vars.php', form => { abc => 123, def => 456 } )->status_is(200);
+$t->post_ok( '/vars.php' => form => { abc => 123, def => 456 } );
+$t->status_is(200);
 $content = $t->tx->res->body;
 ok( $content =~ /_GET = array *\(\s*\)/, '$_GET is empty' );
 ok( $content !~ /_POST = array *\(\s*\)/, '$_POST not empty' );
