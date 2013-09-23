@@ -8,6 +8,7 @@ use Data::Dumper;
 $Data::Dumper::Indent = 1;
 $Data::Dumper::Sortkeys = 1;
 
+our $VERSION = '0.01';
 my $php_req_handler_path = sprintf "/php-handler-%07x", 0x10000000 * rand();
 my $php_template_pname = sprintf "template_%07x", 0x10000000 * rand();
 
@@ -142,6 +143,10 @@ print STDERR "template path is $path\n"
 =head1 NAME
 
 MojoX::Plugin::PHP - enable PHP templates in your Mojolicious application
+
+=head1 VERSION
+
+0.01
 
 =head1 SYNOPSIS
 

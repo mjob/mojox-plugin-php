@@ -9,6 +9,8 @@ use Mojo::Util qw(decode encode monkey_patch slurp);
 use constant DEBUG => 
     $ENV{MOJO_TEMPLATE_DEBUG} || $ENV{MOJOX_TEMPLATE_PHP_DEBUG} || 0;
 
+our $VERSION = '0.01';
+
 #has [qw(auto_escape compiled)];
 has [qw(code)] => '';
 has encoding => 'UTF-8';
@@ -90,6 +92,10 @@ EOF
 =head1 NAME
 
 MojoX::Template::PHP - Use PHP as templating system in Mojolicious
+
+=head1 VERSION
+
+0.01
 
 =head1 WTF
 
