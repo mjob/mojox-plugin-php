@@ -48,6 +48,26 @@ sub interpret {
     # FIXME LATER: $params->{_FILES} = $self->_process_uploads($c);
     $self->_set_method_params( $c, $params, $variables_order );
 
+    if (ref $c->req->body eq 'File::Temp') {
+	my $input = join qq//, readline($c->req->body);
+	if (my $len = length($input)) {
+	    PHP::set_php_input( $input );
+	    $params->{HTTP_RAW_POST_DATA} = $input;
+	    if ($len < 500) {
+		$c->app->log->debug('$HTTP_RAW_POST_DATA: ' . $input);
+	    } else {
+		$c->app->log->debug('$HTTP_RAW_POST_DATA: ' . $len . ' bytes');
+	    }
+	}
+    } elsif (1) {
+	# XXX - should we always set $HTTP_RAW_POST_DATA?
+	my $input = $c->req->body;
+	if (my $len = length($input)) {
+	    PHP::set_php_input( $input );
+	    $params->{HTTP_RAW_POST_DATA} = $input;
+	}
+    }
+
     while (my ($param_name, $param_value) = each %$params) {
 	PHP::assign_global($param_name, $param_value);
     }

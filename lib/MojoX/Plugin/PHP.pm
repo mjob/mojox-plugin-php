@@ -24,10 +24,6 @@ sub register {
 		       \&_php_controller );
 
     $app->hook( before_dispatch => \&_before_dispatch_hook );
-#    $app->hook( after_static => \&_after_static_hook );
-#    $app->hook( before_routes => \&_before_routes_hook );
-
-    # XXX   $app->routes()  for all *.php templates ?
 }
 
 sub _before_dispatch_hook {
