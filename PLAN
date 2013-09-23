@@ -1,0 +1,116 @@
+
+If you wanted to use PHP as a templating system within Mojolicious,
+what would it look like?
+
+First, the client will make a request like
+
+    GET /foo/bar/baz.php
+
+The Mojo web server will receive the request. How does it recognize
+that it should use PHP to serve it?
+
+    1. there is a template in templates/foo/bar/baz.php
+       and somehow Mojolicious knows to use the PHP engine to process it
+    2. there is a file in  public/foo/bar/baz.php
+       and somehow Mojolicious knows to use the PHP engine to process it
+    3. there is a route set-up for  /foo/bar/baz.php
+       the controller loads PHP data from  somewhere/foo/bar/baz.php
+       and invokes the PHP engine to process it
+    4. there is a generic route set up for  /*/*.php to a controller
+       the loads the PHP data from an appropriate location, and invokes
+       the PHP engine to process it
+
+    Discussion:
+    I'm leery of #2. Do other files under  public/  get special processing?
+
+    #3 looks like the least amount of work/messing with the guts of Mojo,
+    though it would be good if there were a way to automatically create
+    routes for any *.php files the system can find. 
+
+    What does #4 look like from the  app->routes  object? Something like
+
+        app->routes->any('*.php')->to('MojoX::PHP::
+
+Are there plugins involved? 
+
+    I don't grok plugins, yet.  You go  app->plugin('MojoX::PHP')  to load
+    a plugin? And then what?
+
+    From the plugin, you say  use Mojo::Base 'Mojolicious::Plugin'.
+    In your plugin you define
+        sub register {
+            my ($self, $app, $conf) = @_;
+            ...
+        }
+    In the ... part, you call methods on the $app and install hooks
+    on the $app
+
+    Hmmmmmmm. There is a  Mojolicious::Plugin::EPLRenderer  and
+    Mojolicious::Plugin::EPRenderer (both loaded automatically) that
+    set up the *.ep file renderers. This is a lot like what how we
+    want the PHP engine to be invoked. What are the key features 
+    of M::P::EPRenderer?
+
+    1. $template->{auto_escape}=1 to prevent XSS attacks, however that helps
+    2. add "ep" handler and make it the default
+       $app->renderer->default_handler('ep')->add_handler( ... );
+    3. handler caches the request for the path and all stash vars
+    4. prepend "my $self=shift; ... ; use strict;' to the template
+    5. render with EPLRenderer ... Mojo::Template
+
+A-ha, so  Mojo::Template  is the engine for processing .ep (embedded Perl)
+templates? Then I reckon PHP processing involves a PHP plugin based on
+Mojolicious::Plugin::EPLRenderer  and a PHP processing engine based on
+Mojo::Template. 
+
+Are there hooks involved? Setting a hook means that code is called on
+every request. We could use it to discover that a PHP template is being
+sought, and to arrange for the PHP templating engine to be used to serve
+the request.
+
+    Quick hooks primer:
+    1. after_build_tx => after tx is built, before HTTP req is parsed
+    2. before_dispatch => called before static file server acts
+    3. after_static => called after static file server acts
+    4. before_routes => called before router acts
+    5. around_action => called before action is invoked
+    6. after_render => called after content is generated
+    7. after_dispatch => called after response is rendered
+    8. around_dispatch => called before before_dispatch
+
+    Is around_dispatch a candidate? If the request is not for a PHP
+    file, just call $next->(). If it is for a PHP file, skip the router?
+    Rewrite the router? Change the route to use the PHP controller?
+    I'm not sure.
+
+Miscellaneous note: the defaults method
+
+    app->default( xyz => "123" )  sets  xyz=123  in the stash for all requests
+
+Miscellaneous note: the types method. We'll almost surely want to say
+something like
+
+    app->types( php => "application/x-php" );
+
+Hello world! application:
+
+    Start with  /templates/php/hello.php:
+
+        <?php echo "hello world"; ?>
+
+    Request /hello.php
+
+    Expect a response: status=200, content="hello world"
+
+##################################################################
+
+Plan #1:
+    MojoX::Plugin::PHP  based on  Mojolicious::Plugin::EPLRenderer
+    MojoX::Template::PHP  based on  Mojo::Template
+    app->plugin( 'MojoX::Plugin::PHP' => %config )
+
+Plan #2 (or part b of plan #1):
+    before_dispatch hook changes path like  /xxx/yyy.php  to
+            /php-handler-7a4f63/xxx/yyy.php
+    route  /php-handler-7a4f53/*template  assigned to a PHP controller
+    PHP controller fixes the path, calls the PHP renderer
