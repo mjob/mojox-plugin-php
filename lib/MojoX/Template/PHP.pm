@@ -172,6 +172,7 @@ sub _php_method_params {
 
 	    # XXX - how to generalize this from 2 to n level deep hash?
 	    if ($key =~ /\]\[/) {
+		$DB::single = 1;
 		my ($key1, $key2) = split /\]\[/, $key;
 		$new_params->{$p}{$key1}{$key2} = $existing_params->{$pp};
 	    } else {
@@ -208,11 +209,10 @@ sub _set_method_params {
     }
 
     # TODO: $var_order =~ /P/ && method eq 'POST'
-    $DB::single = 1;
+    $DB::single ||= keys %{$params->{_GET}};
     if ($var_order =~ /P/ && $c->req->method eq 'POST') {
-	$DB::single = 1;
-	my $order = [ $c->req->params->param ];
-	$params->{_POST} = _php_method_params( $c, @$order );
+	my $order = [ $c->req->body_params->param ];
+	$params->{_POST} = _php_method_params( $c->req->body_params, @$order );
     }
 
     $params->{_REQUEST} = {};
