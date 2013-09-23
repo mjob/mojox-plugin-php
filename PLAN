@@ -114,3 +114,16 @@ Plan #2 (or part b of plan #1):
             /php-handler-7a4f63/xxx/yyy.php
     route  /php-handler-7a4f53/*template  assigned to a PHP controller
     PHP controller fixes the path, calls the PHP renderer
+
+##################################################################
+
+TEST PLAN
+---------
+
+See t/ directory of Catalyst-View-Template-PHP distribution for
+inspiration.
+
+Test templates can go in:
+    the  t/templates  directory
+    the  t/public     directory
+    the __DATA__ section of t/MojoTestServer.pm

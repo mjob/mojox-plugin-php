@@ -90,22 +90,17 @@ sub _template_name {
     return $name;
 }
 
-sub _get_data_template {
-    my ($renderer, $c, $options) = @_;
-}
-
-
 sub _php {
     my ($renderer, $c, $output, $options) = @_;
 
-    print STDERR "In _php renderer\n";
+#   print STDERR "In _php renderer\n";
 
     my $inline = $options->{inline};
 #   my $path = $renderer->template_path($options);
     my $path = _template_path($renderer, $c, $options);
 
-print STDERR "template path is $path\n"
-    ;
+#print STDERR "template path is $path\n"
+#    ;
 
     $path = md5_sum encode('UTF-8', $inline) if defined $inline;
     return undef unless defined $path;
@@ -123,8 +118,7 @@ print STDERR "template path is $path\n"
 	if (-r $path) {
 	    $log->debug( "Rendering template '$t'." );
 	    $$output = $mt->name("template '$t'")->render_file($path,$c);
-	}
-	elsif (my $d = $renderer->get_data_template($options)) {
+	} elsif (my $d = $renderer->get_data_template($options)) {
 	    $log->debug( "Rendering template '$t' from DATA section" );
 	    $$output = $mt->name("template '$t' from DATA section")
 				->render($d,$c);
@@ -158,5 +152,12 @@ MojoX::Plugin::PHP - enable PHP templates in your Mojolicious application
 L<MojoX::Plugin::PHP> establishes a PHP engine as the default
 handler for C<php> files and templates.
 
-=cut
+=head1 METHODS
 
+=head2 register
+
+    $plugin->register(Mojolicious->new);
+
+Register renderer in L<Mojolicious> application.
+
+=cut

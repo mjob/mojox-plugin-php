@@ -14,15 +14,15 @@ our $VERSION = '0.01';
 #has [qw(auto_escape compiled)];
 has [qw(code)] => '';
 has encoding => 'UTF-8';
-has escape => sub { \&Mojo::Util::xml_escape };
+#has escape => sub { \&Mojo::Util::xml_escape };
 has name => 'template.php';
 has namespace => 'MojoX::Template::PHPSandbox';
 
 
-sub build {
-    my $self = shift;
-    return $self;
-}
+#sub build {
+#    my $self = shift;
+#    return $self;
+#}
 
 sub interpret {
     my $self = shift;
@@ -142,6 +142,13 @@ L<MojoX::Template::PHP> implements the following attributes:
     $mt = $mt->code($code);
 
 PHP code for template.
+
+=head2 encoding
+
+    my $encoding = $mt->encoding;
+    $mt = $mt->encoding( $charset );
+
+Encoding used for template files.
 
 =head2 name
 
