@@ -35,21 +35,21 @@ ok( $content =~ /_ENV = array/ &&
     $content !~ /_ENV = array *\(\s*\)/, '$_ENV not empty' );
 ok( $content =~ /_COOKIE = array *\(\s*\)/, '$_COOKIE is empty' );
 
-done_testing();
-__END__
 
+$t->post_ok( '/vars.php', form => { abc => [ 123, 789 ] , def => 456 } );
+$t->status_is(200);
+$content = $t->tx->res->body;
 
+#    # When PHP receives a duplicate param name, it ignores all values
+#    # except the last value.
+#    $response = request POST 'http://localhost/vars.php', [#
+#	abc => 123,
+#	def => 456,
+#	abc => 789
+#    ];
 
-    # When PHP receives a duplicate param name, it ignores all values
-    # except the last value.
-    $response = request POST 'http://localhost/vars.php', [
-	abc => 123,
-	def => 456,
-	abc => 789
-    ];
-
-    ok( $response, 'response post with duplicate ok' );
-    $content = eval { $response->content };
+#    ok( $response, 'response post with duplicate ok' );
+#    $content = eval { $response->content };
     ok( $content =~ /_GET = array *\(\s*\)/, '$_GET is empty' );
     ok( $content !~ /_POST = array *\(\s*\)/, '$_POST not empty' ); 
     ok( $content !~ /_POST.*abc.*=.*123.*_REQUEST/s, 'lost first val for $_POST["abc"]');
@@ -65,17 +65,20 @@ __END__
 	$content !~ /_ENV = array *\(\s*\)/, '$_ENV not empty' );
     ok( $content =~ /_COOKIE = array *\(\s*\)/, '$_COOKIE is empty' );
 
+$t->post_ok( '/vars.php', form => { 'foo[x]', 1, 'foo[y]', 2, 'foo[z]', 3 } );
+$t->status_is(200);
 
-    # When PHP receives a param name like  foo[bar] , it creates an 
-    # associative array param named foo with key bar.
-    $response = request POST 'http://localhost/vars.php', [
-	'foo[x]' => 1,
-	'foo[y]' => 2,
-	'foo[z]' => 3
-    ];
+#    # When PHP receives a param name like  foo[bar] , it creates an 
+#    # associative array param named foo with key bar.
+#    $response = request POST 'http://localhost/vars.php', [
+#	'foo[x]' => 1,
+#	'foo[y]' => 2,
+#	'foo[z]' => 3
+#    ];
 
-    ok( $response, 'response post array ok' );
-    $content = eval { $response->content };
+#    ok( $response, 'response post array ok' );
+#    $content = eval { $response->content };
+$content = $t->tx->res->body;
     ok( $content =~ /_GET = array *\(\s*\)/, '$_GET is empty' );
 
     ok( $content !~ /_POST = array *\(\s*\)/, '$_POST not empty' ); 
@@ -97,6 +100,8 @@ __END__
 	$content !~ /_ENV = array *\(\s*\)/, '$_ENV not empty' );
     ok( $content =~ /_COOKIE = array *\(\s*\)/, '$_COOKIE is empty' );
 
+done_testing();
+__END__
 
     # 2-level hash
     $response = request POST 'http://localhost/vars.php', [
