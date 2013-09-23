@@ -30,7 +30,7 @@ sub _before_dispatch_hook {
     use Data::Dumper;
     my $c = shift;
     if ($c->req->url->path =~ /\.php$/) {
-	$DB::single = 1;
+
 	my $old_path = $c->req->url->path;
 	$c->req->{__old_path} = $old_path->to_string;
 	$c->req->url->path( $php_req_handler_path . $old_path );
@@ -74,6 +74,7 @@ sub _template_path {
     use File::Spec::Functions 'catfile';
     my ($renderer, $c, $options) = @_;
     my $name = $options->{template};
+
     foreach my $path (@{$renderer->paths}, @{$c->app->static->paths}) {
 	my $file = catfile($path, split '/', $name);
 	return $file if -r $file;

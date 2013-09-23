@@ -136,7 +136,7 @@ sub _server_params {
     my $req = $c->req;
     my $headers = $req->headers;
 
-    $DB::single = 1;
+
 
     # see  Mojolicious::Plugin::CGI
     return {

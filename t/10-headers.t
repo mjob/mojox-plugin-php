@@ -59,14 +59,11 @@ ok( abs($result1 - (14.14**5.5)) < 1.0E-2,
     or diag 14.14**5.5;
 ok( $result6 =~ m{/PHP\.pm} , 'result #6 looks correct' );
 
-done_testing();
-__END__
-
 if ($PHP::VERSION >= 0.15) {
-    # requires PHP 0.15
-    my $response = request 'http://localhost/php/headers2.php';
-    ok( $response, 'simple response from header2.php' );
-#   diag Dumper($response);
+
+    $t->get_ok('/php/headers2.php')->status_is(200);
+    $content = $t->tx->res->body;
+    my $response = $t->tx->res->headers;
 
     ok( ref($response->header("foo")) ne 'ARRAY' &&
 	$response->header("foo") eq 'baz',
