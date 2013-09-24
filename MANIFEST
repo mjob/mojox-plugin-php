@@ -16,6 +16,7 @@ t/11-globals.t
 t/12-postprocess.t
 t/20-upload.t
 t/21-redirect.t
+t/22-utf8.t
 t/MojoTestServer.pm
 t/manifest.t
 t/pod-coverage.t

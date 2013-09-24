@@ -132,7 +132,6 @@ sub interpret {
     }
     if ($c->res->headers->header('Location')) {
 
-	$DB::single = 1;
 	# this is disappointing.
 	# if the $output string is empty, Mojo will automatically
 	# set a 404 status code?
@@ -204,7 +203,7 @@ sub _process_uploads {
 sub _cookie_params {
     my ($self, $c) = @_;
     if (@{$c->req->cookies}) {
-	$DB::single = 1;
+	$DB::single = 'cookies!';
     }
     # Mojo: $c->req->cookies is [], in Catalyst it is {}
     my $p = { map {;

@@ -14,13 +14,11 @@ sub request_with_redirect {
     my $response = $t->tx->res;
     if ($response->headers->header('location')) {
 	use URI;
-	$DB::single = 1;
 	my $location = $response->headers->header('location');
 	if (ref $location) {
 	    $location = $location->[0];
 	}
 	my $uri = URI->new( $location );
-	print STDERR "Redirect uri=$uri, path=",$uri->path,"\n";
 	$t->get_ok( $uri->path );
 	$response = $t->tx->res;
     }

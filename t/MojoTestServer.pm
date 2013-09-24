@@ -7,11 +7,10 @@ use PHP;
 plugin 'MojoX::Plugin::PHP' => {
     php_var_preprocessor => \&_var_preprocessor,
     php_header_processor => \&_compute_from_header,
-    php_output_postprocessor => 't::MojoTestServer::_postprocess',
+    php_output_postprocessor => \&_postprocess_php_output
 };
 
 # t::MojoTestServer::_postprocess can be redefined, say, in t/12-postprocess.t
-*_postprocess = sub { };
 
 get '/' => sub { $_[0]->render( text => 'This is t::MojoTestServer' ); };
 post '/body' => sub {
@@ -52,6 +51,11 @@ sub _compute_from_header {
     }
     PHP::assign_global( $output, $result );
     return 0;  # don't include header with response
+}
+
+sub _postprocess_php_output {
+    our $postprocessor;
+    $postprocessor && $postprocessor->(@_);
 }
 
 1;

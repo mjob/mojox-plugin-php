@@ -15,8 +15,6 @@ $t->app->hook( before_dispatch => sub {
 
 
 {
-    no warnings 'redefine';
-
     %TestApp::Controller::Root::stash_globals = ();
     %TestApp::View::PHPTest::phptest_globals = ();
 
@@ -33,9 +31,8 @@ $t->app->hook( before_dispatch => sub {
 	g2 => 456
 	);
 
-    *t::MojoTestServer::_postprocess = sub {
+    $t::MojoTestServer::postprocessor = sub {
 	my ($output, $headers, $c) = @_;
-	$DB::single = 1;
 	$$output =~ s/5/7/g;
     };
 
@@ -53,7 +50,7 @@ $t->app->hook( before_dispatch => sub {
 	g4 => [ 1, 3, 5 ]
 	);
 
-    *t::MojoTestServer::_postprocess = sub {
+    $t::MojoTestServer::postprocessor = sub {
 	my ($output, $headers, $c) = @_;
 	$$output = "this content has been deleted";
     };
@@ -66,7 +63,7 @@ $t->app->hook( before_dispatch => sub {
     %TestApp::View::PHPTest::phptest_globals = (
 	g2 => 17, g4 => "abcdefghj" );
 
-    *t::MojoTestServer::_postprocess = sub {
+    $t::MojoTestServer::postprocessor = sub {
 	my $output = shift;
 	my $g4 = reverse PHP::eval_return('$g4');
 	$$output .= "<pre>\nreverse G4 is $g4\n</pre>\n";

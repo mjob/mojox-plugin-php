@@ -31,6 +31,14 @@ that it should use PHP to serve it?
 
         app->routes->any('*.php')->to('MojoX::PHP::
 
+    Current solution:
+    -----------------
+    1. a generic handler with a hard-to-guess URI is set up for PHP
+    2. a before_dispatch hook identifies PHP requests, rewrites the
+       request so it will get routed to the PHP handler
+    3. the PHP handler restores the request path as it processes the
+       template
+
 Are there plugins involved? 
 
     I don't grok plugins, yet.  You go  app->plugin('MojoX::PHP')  to load
@@ -130,22 +138,21 @@ Test templates can go in:
 
 Still need to test:
 
-    load php template from __DATA__ section template
-    upload files
     cookies
     php_stderr_processor callback
-    php_output_postprocessor callback
-    what to do with redirects? (t/22?)
     t/12-postprocess manipulate headers
 
-FEATURE PLAN
-------------
+FEATURE PLAN, OUTSTANDING ISSUES
+--------------------------------
 
 hooks in MojoX::Template::PHP::interpret:
     allow multiple callbacks to be registered on each hook?
+
 still need to copy cookie data to $_COOKIE
-how do you determine  tmp_name  on a file upload? do we set that ourselves?
-how do you handle multiple file uploads on the same parameter name like 'foo[]'?
+
+how does PHP determine the "name" of an upload? We are adding a
+"name" header but that's not what a file upload will look like in
+the wild.
 
 What does PHP do with a parameter name like  foo[][4] ?
 
@@ -157,3 +164,5 @@ What should it do?
 Waht does MojoX::Template::PHP  do with a PHP run-time error?
 What should it do?
 
+Mojolicious::Plugin::EPRenderer sets  auto_escape  to "avoid XSS attacks".
+Does this plugin need to avoid XSS attacks?
