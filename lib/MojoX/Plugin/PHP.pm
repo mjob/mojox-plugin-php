@@ -16,8 +16,7 @@ sub _php_template_pname { return $php_template_pname; }
 
 sub register {
     my ($self, $app, $config) = @_;
-#print STDERR "registered ", __PACKAGE__, "\n"
-#    ;
+
     $app->types->type( php => "application/x-php" );
     $app->renderer->add_handler( php => \&_php );
     $app->routes->any( $php_req_handler_path ."/*" . $php_template_pname,
@@ -91,14 +90,8 @@ sub _template_name {
 sub _php {
     my ($renderer, $c, $output, $options) = @_;
 
-#   print STDERR "In _php renderer\n";
-
     my $inline = $options->{inline};
-#   my $path = $renderer->template_path($options);
     my $path = _template_path($renderer, $c, $options);
-
-#print STDERR "template path is $path\n"
-#    ;
 
     $path = md5_sum encode('UTF-8', $inline) if defined $inline;
     return undef unless defined $path;
@@ -110,7 +103,6 @@ sub _php {
 	$$output = $mt->name('inline template')->render($inline, $c);
     } else {
 	$mt->encoding( $renderer->encoding ) if $renderer->encoding;
-#	return undef unless my $t = $renderer->template_name($options);
 	return undef unless my $t = _template_name($renderer, $c, $options);
 
 	if (-r $path) {

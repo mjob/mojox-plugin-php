@@ -12,6 +12,7 @@ t/05-server.t
 t/06-env.t
 t/07-raw.t
 t/10-headers.t
+t/11-globals.t
 t/MojoTestServer.pm
 t/manifest.t
 t/pod-coverage.t

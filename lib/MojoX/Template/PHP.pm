@@ -39,6 +39,7 @@ sub interpret {
     my $cookie_params = { };
     my $params = { };
     if ($c) {
+	$DB::single = 1;
 	$params = { %{$c->{stash}}, c => $c };
     }
 
