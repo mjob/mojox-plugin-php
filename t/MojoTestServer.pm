@@ -6,8 +6,12 @@ use PHP;
 
 plugin 'MojoX::Plugin::PHP' => {
     php_var_preprocessor => \&_var_preprocessor,
-    php_header_processor => \&_compute_from_header
+    php_header_processor => \&_compute_from_header,
+    php_output_postprocessor => 't::MojoTestServer::_postprocess',
 };
+
+# t::MojoTestServer::_postprocess can be redefined, say, in t/12-postprocess.t
+*_postprocess = sub { };
 
 get '/' => sub { $_[0]->render( text => 'This is t::MojoTestServer' ); };
 post '/body' => sub {

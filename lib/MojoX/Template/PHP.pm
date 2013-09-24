@@ -20,6 +20,8 @@ has namespace => 'MojoX::Template::PHPSandbox';
 has template => "";
 
 sub interpret {
+    no strict 'refs';  # let callbacks be fully qualified subroutine names
+
     my $self = shift;
     my $c = shift // {};
     local $SIG{__DIE__} = sub {

@@ -136,6 +136,7 @@ Still need to test:
     php_stderr_processor callback
     php_output_postprocessor callback
     what to do with redirects? (t/22?)
+    t/12-postprocess manipulate headers
 
 FEATURE PLAN
 ------------
