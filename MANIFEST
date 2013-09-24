@@ -14,6 +14,7 @@ t/07-raw.t
 t/10-headers.t
 t/11-globals.t
 t/12-postprocess.t
+t/20-upload.t
 t/MojoTestServer.pm
 t/manifest.t
 t/pod-coverage.t
@@ -65,3 +66,4 @@ t/templates/redirectx.php
 t/templates/runtime-error.php
 t/templates/vars.php
 t/templates/warnings.php
+t/testapp.conf

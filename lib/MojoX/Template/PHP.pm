@@ -48,7 +48,9 @@ sub interpret {
 	$cookie_params = $self->_cookie_params($c);
 	$params->{_COOKIE} = $cookie_params;
     }
-    # FIXME LATER: $params->{_FILES} = $self->_process_uploads($c);
+
+    $params->{_FILES} = $self->_process_uploads($c);
+
     $self->_set_method_params( $c, $params, $variables_order );
 
     if (ref $c->req->body eq 'File::Temp') {
@@ -72,9 +74,6 @@ sub interpret {
     }
 
     # hook to make adjustments to  %$params
-    # XXX - when that hook is available, use it in t/10 to set params
-    #       from %TestApp::View::TemplatePHP::php_globals
-
     if ($callbacks && $callbacks->{php_var_preprocessor}) {
 	$callbacks->{php_var_preprocessor}->($params);
     }
@@ -133,6 +132,61 @@ sub interpret {
     return Mojo::Exception->new( $@, [$self->template, $self->code] );
 }
 
+sub _process_uploads {
+    my ($self, $c) = @_;
+    my $_files = {};
+    $DB::single = 1;
+
+    # Find all parameters whose values are Mojo::Upload?
+    # XXX - what if there is an array of files using the same 'foo[]' key?
+    foreach my $key ($c->param) {
+	if ($key =~ /\[\]/) {
+	    # what do multiple uploads on the same key look like?
+	    $DB::single = 1;
+	    foreach my $upload ($c->param($key)) {
+		next unless ref $upload eq 'Mojo::Upload';
+
+		# do we have to make our own temp file? ok.
+		use File::Temp;
+		my ($temp_fh,$tmpname) = File::Temp::tempfile(UNLINK => 1);
+		close $temp_fh;
+		$upload->move_to($tmpname);
+
+		my $name = scalar($upload->headers->header('name'));
+		$key =~ s/\[\]//;
+
+		push @{$_files->{$key}{name}}, $name || $upload->name;
+		push @{$_files->{$key}{size}}, $upload->size;
+		push @{$_files->{$key}{error}}, 0;
+		push @{$_files->{$key}{type}}, $upload->headers->content_type;
+		push @{$_files->{$key}{tmp_name}}, $tmpname;
+		PHP::_spoof_rfc1867( $tmpname || "" );
+	    }
+	} else {
+	    foreach my $upload ($c->param($key)) {
+		next unless ref $upload eq 'Mojo::Upload';
+
+		# do we have to make our own temp file? ok.
+		use File::Temp;
+		my ($temp_fh,$tmpname) = File::Temp::tempfile(UNLINK => 1);
+		close $temp_fh;
+		$upload->move_to($tmpname);
+
+		$_files->{$key} = {
+		    name => scalar($upload->headers->header("name"))
+			|| $upload->name,
+			size => $upload->size,
+			error => 0,
+			type => scalar $upload->headers->content_type ,
+			tmp_name => $tmpname,
+		};
+		PHP::_spoof_rfc1867( $_files->{$key}{tmp_name} || "" );
+	    }
+	}
+    }
+    return $_files;
+}
+
 sub _cookie_params {
     my ($self, $c) = @_;
     if (@{$c->req->cookies}) {
@@ -188,6 +242,10 @@ sub _php_method_params {
 #	$existing_params->{$name} = @p > 1 ? $p[-1] : $p[0];
 	$existing_params->{$name} = @p > 1 ? [ @p ] : $p[0];
     }
+
+    # XXX - what if parameter value is a Mojo::Upload ? Do we still
+    #       save it in the $_GET/$_POST array?
+
 
     # The conventional ways to parse input parameters with Perl (CGI/Catalyst)
     # are different from the way that PHP parses the input. Some examples:
