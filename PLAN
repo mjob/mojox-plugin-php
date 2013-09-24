@@ -150,3 +150,10 @@ how do you handle multiple file uploads on the same parameter name like 'foo[]'?
 What does PHP do with a parameter name like  foo[][4] ?
 
 Do we have to apply  _php_method_params  to  $params->{_FILES}  too ?
+
+What does  MojoX::Template::PHP  do when confronted with a PHP compile error?
+What should it do?
+
+Waht does MojoX::Template::PHP  do with a PHP run-time error?
+What should it do?
+

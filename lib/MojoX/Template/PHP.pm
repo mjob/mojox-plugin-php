@@ -102,7 +102,6 @@ sub interpret {
 	    my ($keyval, $replace) = @_;
 	    my ($key,$val) = split /: /, $keyval, 2;
 	    my $keep = 1;
-	    $DB::single = 1;
 	    if ($callbacks && $callbacks->{php_header_processor}) {
 		$keep &&= $callbacks->{php_header_processor}->($key, $val);
 	    }
@@ -111,6 +110,15 @@ sub interpret {
 		$c->res->headers->header($key,$val);
 	    } else {
 		$c->res->headers->add($key,$val);
+	    }
+	    if ($key =~ /^[Ss]tatus$/) {
+		my ($code) = $val =~ /^\s*(\d+)/;
+		if ($code) {
+		    $c->res->code($code);
+		} else {
+		    $c->app->log->error("Unrecognized Status header: '"
+					. $keyval . "' from PHP");
+		}
 	    }
 	} );
 
@@ -122,11 +130,19 @@ sub interpret {
 	$callbacks->{php_output_postprocessor}->(
 	    \$output, $c && $c->res->headers, $c);
     }
+    if ($c->res->headers->header('Location')) {
 
-    # XXX - hook to change status code?
-
-    # XXX - check if Location: ... header is set? redirect?
-
+	$DB::single = 1;
+	# this is disappointing.
+	# if the $output string is empty, Mojo will automatically
+	# set a 404 status code?
+	if ("" eq ($output // "")) {
+	    $output = chr(0);
+	}
+	if (!$c->res->code) {
+	    $c->res->code(302);
+	}
+    }
 
     return $output unless $@;
     return Mojo::Exception->new( $@, [$self->template, $self->code] );
@@ -135,14 +151,12 @@ sub interpret {
 sub _process_uploads {
     my ($self, $c) = @_;
     my $_files = {};
-    $DB::single = 1;
 
     # Find all parameters whose values are Mojo::Upload?
     # XXX - what if there is an array of files using the same 'foo[]' key?
     foreach my $key ($c->param) {
 	if ($key =~ /\[\]/) {
 	    # what do multiple uploads on the same key look like?
-	    $DB::single = 1;
 	    foreach my $upload ($c->param($key)) {
 		next unless ref $upload eq 'Mojo::Upload';
 
@@ -296,7 +310,6 @@ sub _php_method_params {
 
 	    # XXX - how to generalize this from 2 to n level deep hash?
 	    if ($key =~ /\]\[/) {
-		$DB::single = 1;
 		my ($key1, $key2) = split /\]\[/, $key;
 		$new_params->{$p}{$key1}{$key2} = $existing_params->{$pp};
 	    } else {
@@ -332,8 +345,6 @@ sub _set_method_params {
 	}
     }
 
-    # TODO: $var_order =~ /P/ && method eq 'POST'
-    $DB::single ||= keys %{$params->{_GET}};
     if ($var_order =~ /P/ && $c->req->method eq 'POST') {
 	my $order = [ $c->req->body_params->param ];
 	$params->{_POST} = _php_method_params( $c->req->body_params, @$order );

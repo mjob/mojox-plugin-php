@@ -9,8 +9,6 @@ $t->get_ok('/')->status_is(200)->content_is( 'This is t::MojoTestServer' );
 
 
 
-
-# how to do a request that simulates a file upload??
 my $size = -s "t/testapp.conf";
 $t->post_ok( '/handle_upload.php' =>
 	     form => { my_file => { 
@@ -20,7 +18,6 @@ $t->post_ok( '/handle_upload.php' =>
 		       } } )
     ->status_is(200);
 my $content = $t->tx->res->body;
-ok( $content, "content is $content");
 ok( $content =~ /\$_FILES =/, 'content looks like correct format' );
 ok( $content =~ /\bmy_file\b/, 'content got correct file upload param name' );
 
@@ -44,9 +41,10 @@ ok( PHP::eval_return( "is_uploaded_file('$tmp_name')" ),
 
 ### files may be deleted when the request is complete.
 ### need to perform the test inside PHP to read, move file
-#    ok( PHP::eval_return( "is_file('$tmp_name')" ),
-#	"PHP believes $tmp_name is file" );
-#    ok( -f $tmp_name, "Perl believes $tmp_name is a file" );
+ok( PHP::eval_return( "is_file('$tmp_name')" ),
+    "PHP believes $tmp_name is file" );
+ok( -f $tmp_name, "Perl believes $tmp_name is a file" );
+ok($size == -s $tmp_name, "$tmp_name has the right size" );
 
 
 

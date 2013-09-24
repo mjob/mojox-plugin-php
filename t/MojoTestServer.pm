@@ -36,7 +36,6 @@ sub _var_preprocessor {
 
 # used in t/10-compute.t
 sub _compute_from_header {
-    $DB::single = 1;
     my ($key, $payload, $c) = @_;
     return 1 unless $key eq 'X-compute';
     $payload = eval { Mojo::JSON->new->decode($payload) };

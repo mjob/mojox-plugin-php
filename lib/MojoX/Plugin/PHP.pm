@@ -119,6 +119,7 @@ sub _php {
 	    return undef;
 	}
     }
+
     return ref $$output ? die $$output : 1;
 }
 

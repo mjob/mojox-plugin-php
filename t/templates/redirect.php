@@ -2,8 +2,10 @@
 $loc = $_GET['location'];
 if ($loc == 1) {
   $location = "http://localhost/redirect_destination.php";
+  $location = "/redirect_destination.php";
 } else {
   $location = "http://localhost/redirect_destination2.php";
+  $location = "/redirect_destination2.php";
 }
 
 // what is the correct way to redirect with status other than 302?
