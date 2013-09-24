@@ -133,34 +133,13 @@ Still need to test:
     load php template from __DATA__ section template
     upload files
     cookies
+    php_stderr_processor callback
+    php_output_postprocessor callback
+    what to do with redirects? (t/22?)
 
 FEATURE PLAN
 ------------
 
-document MojoX::Template::PHP::register_header_callback
-    I don't really like the package-scoped @header_callbacks variable
-    can we make this a member variable instead of a class var?
-    yes, but we might need to make a class var in MojoX::Plugin::PHP?
-        then we document header_callback in  MojoX::Plugin::PHP
-        we could put other callback and hooks in MojoX::Plugin::PHP, too
-	and then pass them to new MojoX::Template::PHP objects when we
-	create them
-    no, I don't know whether you can have direct access to a plugin object
-    well then how about in the stash?
-        $self->render( template => ..., handler => 'php',
-		       php_var_preprocessor => sub { ... },
-		       php_postprocessor => sub { ... },
-		       php_stderr_handler => sub { ... },
-		       php_header_handler => sub { ... }  );
-    not quite. We don't generally have access to the  render  call
-    because it is inside  _php_controller  and requests are automatically
-    routed to it ... well if not stash, then  config ?
-        I don't grok config enough, but that looks like the place to be
+hooks in MojoX::Template::PHP::interpret:
+    allow multiple callbacks to be registered on each hook?
 still need to copy cookie data to $_COOKIE
-more hooks in  MojoX::Template::PHP::interpret?
-    PHP::options( stderr => ...? )
-	log to app->log->warn() ?
-    hook to adjust $params before  assign_global  calls
-    hook to postprocess output
-    hook to postprocess headers
-
