@@ -4,10 +4,10 @@ use Data::Dumper;
 use MojoX::Template::PHP;
 use PHP;
 
-plugin 'MojoX::Plugin::PHP';
-
-MojoX::Template::PHP::register_header_callback( qr/^X-compute: /,
-						\&_compute );
+plugin 'MojoX::Plugin::PHP' => {
+    php_var_preprocessor => \&_var_preprocessor,
+    php_header_processor => \&_compute_from_header
+};
 
 get '/' => sub { $_[0]->render( text => 'This is t::MojoTestServer' ); };
 post '/body' => sub {
@@ -22,9 +22,19 @@ post '/body' => sub {
     }
 };
 
-sub _compute {
-    use Mojo::JSON;
-    my ($key, $payload) = @_;
+# used in t/11-globals.t
+sub _var_preprocessor {
+    my $params = shift;
+    while (my ($key,$val) = each %TestApp::View::PHPTest::phptest_globals) {
+	$params->{$key} = $val;
+    }
+}
+
+# used in t/10-compute.t
+sub _compute_from_header {
+    $DB::single = 1;
+    my ($key, $payload, $c) = @_;
+    return 1 unless $key eq 'X-compute';
     $payload = eval { Mojo::JSON->new->decode($payload) };
     if ($@) {
 	PHP::assign_global( 'Perl_compute_result', $@ );

@@ -10,12 +10,6 @@ use constant DEBUG =>
     $ENV{MOJO_TEMPLATE_DEBUG} || $ENV{MOJOX_TEMPLATE_PHP_DEBUG} || 0;
 
 our $VERSION = '0.01';
-our @header_callbacks;
-
-sub register_header_callback {
-    my ($regex, $callback) = @_;
-    push @header_callbacks, [ $regex, $callback ];
-}
 
 #has [qw(auto_escape compiled)];
 has [qw(code)] => '';
@@ -34,14 +28,13 @@ sub interpret {
     };
     PHP::__reset;
 
+    my $callbacks = $c && $c->app->config->{'MojoX::Template::PHP'};
+    $callbacks ||= {};
+
     # prepare global variables for the PHP interpreter
     my $variables_order = PHP::eval_return( "ini_get('variables_order')" );
     my $cookie_params = { };
-    my $params = { };
-    if ($c) {
-	$DB::single = 1;
-	$params = { %{$c->{stash}}, c => $c };
-    }
+    my $params = $c ? { %{$c->{stash}}, c => $c } : { };
 
     if ($variables_order =~ /S/) {
 	$params->{_SERVER} = $self->_server_params($c);
@@ -76,7 +69,16 @@ sub interpret {
 	}
     }
 
+    # hook to make adjustments to  %$params
+    # XXX - when that hook is available, use it in t/10 to set params
+    #       from %TestApp::View::TemplatePHP::php_globals
+
+    if ($callbacks && $callbacks->{php_var_preprocessor}) {
+	$callbacks->{php_var_preprocessor}->($params);
+    }
+
     while (my ($param_name, $param_value) = each %$params) {
+	next if 'CODE' eq ref $param_value;
 	PHP::assign_global($param_name, $param_value);
     }
     $c && $c->stash( 'php_params', $params );
@@ -87,30 +89,43 @@ sub interpret {
     my $ERROR;
     my $HEADER;
     PHP::options( stdout => sub { $OUTPUT .= $_[0]; } );
-    PHP::options( stderr => sub { $ERROR .= $_[0]; } );
-    PHP::options( header => 
-		  sub { 
-		      my ($keyval, $replace) = @_;
-		      my ($key,$val) = split /: /, $keyval, 2;
-		      my $keep = 1;
-		      foreach my $hcb (@header_callbacks) {
-			  if ($keyval =~ $hcb->[0]) {
-			      $keep &&= $hcb->[1]->($key,$val);
-			  }
-		      }
-		      if ($replace) {
-			  $c->res->headers->header($key,$val);
-		      } else {
-			  $c->res->headers->add($key,$val);
-		      }
-		  }
-	);
+    PHP::options(
+	stderr => sub { 
+	    $ERROR .= $_[0]; 
+	    if ($callbacks && $callbacks->{php_stderr_processor}) {
+		$callbacks->{php_stderr_processor}->($_[0]);
+	    }
+	} );
+    PHP::options( 
+	header => sub { 
+	    my ($keyval, $replace) = @_;
+	    my ($key,$val) = split /: /, $keyval, 2;
+	    my $keep = 1;
+	    $DB::single = 1;
+	    if ($callbacks && $callbacks->{php_header_processor}) {
+		$keep &&= $callbacks->{php_header_processor}->($key, $val);
+	    }
+	    return if !$keep;
+	    if ($replace) {
+		$c->res->headers->header($key,$val);
+	    } else {
+		$c->res->headers->add($key,$val);
+	    }
+	} );
 
-
-#   print STDERR "PHP interpreter receiving code: ", $self->code, "\n\n";
 
     my $z = PHP::eval( "?>" . $self->code . "<?php ");
+
     my $output = $OUTPUT;
+    if ($callbacks && $callbacks->{php_output_postprocessor}) {
+	$callbacks->{php_output_postprocessor}->(
+	    \$output, $c && $c->res->headers, $c);
+    }
+
+    # XXX - hook to change status code?
+
+    # XXX - check if Location: ... header is set? redirect?
+
 
     return $output unless $@;
     return Mojo::Exception->new( $@, [$self->template, $self->code] );
@@ -417,9 +432,12 @@ L<Mojo::Base>, and the following new ones:
 
 =head2 interpret
 
-    my $output = $mt->interpret;
+    my $output = $mt->interpret($c)
 
-Interpret compiled template code.
+Interpret template code. Starts the PHP engine and evaluates the
+template code with it. See L<"CONFIG"/MojoX::Plugin::PHP> for
+information about various callbacks that can be used to change
+and extend the behavior of the PHP templating engine.
 
 =head2 render
 

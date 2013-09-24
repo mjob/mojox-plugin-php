@@ -11,9 +11,6 @@ $t->post_ok( '/headers.php', form => { abc => 123, def => 456 } )
 my $content = $t->tx->res->body;
 my $headers = $t->tx->res->headers;
 
-#use Data::Dumper;
-#diag $content, Dumper($headers);
-
 my $names = $headers->names;
 ok( (grep /X-header-\w+/, @$names) == 2, 'headers from PHP were set in Mojo' );
 ok( $headers->header('X-header-abc') eq '123',
@@ -39,7 +36,6 @@ $t->post_ok( '/header_compute.php',
 		 expr6 => '$INC{"PHP.pm"}'
 	     } )->status_is(200);
 $content = $t->tx->res->body;
-diag $content;
 
 ok( $content,  'got content for header_compute.php' );
 ok( $content =~ /begin result/, 'found result begin marker' );
