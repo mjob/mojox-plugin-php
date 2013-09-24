@@ -235,4 +235,24 @@ want the application to follow it.
 
 Register renderer in L<Mojolicious> application.
 
+=head1 SEE ALSO
+
+L<MojoX::Template::PHP>, L<Mojolicious::Plugin::EPRenderer>,
+L<Mojolicious::Plugin::EPLRenderer>,
+L<Catalyst::View::Template::PHP>, L<PHP>, L<PHP::Interpreter>.
+
+=head1 AUTHOR
+
+Marty O'Brien E<lt>mob@cpan.orgE<gt>
+
+=head1 COPYRIGHT
+
+Copyright 2013, Marty O'Brien. All rights reserved.
+
+This library is free software; you can redistribute it and/or modify it
+under the terms of either: the GNU General Public License as published
+by the Free Sortware Foundation; or the Artistic License.
+
+See http://dev.perl.org/licenses for more information.
+
 =cut
