@@ -1,6 +1,7 @@
 use Test::More;
 use Test::Mojo;
 use Mojo::URL;
+use Mojo::Util qw(url_escape);
 use strict;
 use warnings;
 
@@ -20,7 +21,7 @@ foreach my $cookie (@cookies) {
     if ($cookie->name eq 'cookie1') {
 	ok( $cookie->value eq 'value1', 'value for cookie1' );
     } elsif ($cookie->name eq 'cookie3') {
-	ok( $cookie->value eq 'value3', 'value for cookie3' );
+	ok( $cookie->value eq url_escape('value[3]'), 'value for cookie3' );
     } else {
 	ok( 0, 'unrecognized cookie ' . $cookie->name . '=' . $cookie->value);
     }
@@ -28,7 +29,7 @@ foreach my $cookie (@cookies) {
 
 $t->get_ok('/get-cookie.php')->status_is(200)
     ->content_like( qr/cookie1.*=.*value1/, 'cookie1 received in PHP' )
-    ->content_like( qr/cookie3.*=.*value3/, 'cookie3 received in PHP' )
+    ->content_like( qr/cookie3.*=.*value\[3\]/, 'cookie3 received in PHP' )
     ->content_unlike( qr/cookie2/, 'cookie2 not received' )
     ->content_unlike( qr/cookie4/, 'cookie4 not received' );
 

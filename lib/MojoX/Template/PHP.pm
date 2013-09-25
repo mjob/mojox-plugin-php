@@ -5,7 +5,7 @@ use Carp 'croak';
 use PHP 0.15;
 use Mojo::ByteStream;
 use Mojo::Exception;
-use Mojo::Util qw(decode encode monkey_patch slurp);
+use Mojo::Util qw(decode encode monkey_patch slurp url_unescape);
 use constant DEBUG => 
     $ENV{MOJO_TEMPLATE_DEBUG} || $ENV{MOJOX_TEMPLATE_PHP_DEBUG} || 0;
 
@@ -174,7 +174,7 @@ sub interpret {
 	    $c->app->log->info("changing response code from 500 to 302 because there's a location header");
 	    $c->res->code(302);
 	    $c->app->log->info("output is\n\n" . $output);
-	    $c->app->log->info("active exception msg is: $@");
+	    $c->app->log->info("active exception msg is: " . ($@ || ""));
 	    undef $@;
 	}
     }
@@ -245,7 +245,8 @@ sub _cookie_params {
     # Mojo: $c->req->cookies is [], in Catalyst it is {}
     my $p = { 
 	map {;
-	     $_->name => $_->value
+	     print STDERR "COOKIE:  ", $_->name, " => ", $_->value, "\n";
+	     $_->name => url_unescape $_->value
 	} @{$c->req->cookies} };
     return $p;
 }
