@@ -413,9 +413,6 @@ sub render_file {
     $self->name($path) unless defined $self->{name};
     $self->include_file($path);
     return $self->interpret(@_);
-#    my $template = slurp $path;
-#    my $encoding = $self->encoding;
-#    return $self->render($template, @_);
 }
 
 unless (caller) {
