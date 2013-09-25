@@ -199,3 +199,5 @@ Does this plugin need to avoid XSS attacks?
 What happens when the PHP code references the current directory ./ ?
 We should change directory to the path where the template was found,
 and change back when PHP is done.
+
+PHP __FILE__ token resolves to "Embedded code". How to correct this?

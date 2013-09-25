@@ -13,6 +13,7 @@ my $php_req_handler_path = sprintf "/php-handler-%07x", 0x10000000 * rand();
 my $php_template_pname = sprintf "template_%07x", 0x10000000 * rand();
 
 sub _php_template_pname { return $php_template_pname; }
+sub _php_req_handler_path { return $php_req_handler_path; }
 
 sub register {
     my ($self, $app, $config) = @_;
@@ -20,20 +21,31 @@ sub register {
     $app->config( 'MojoX::Template::PHP' => $config );
     $app->types->type( php => "application/x-php" );
     $app->renderer->add_handler( php => \&_php );
+
+    my $t = "/*" . $php_template_pname;
+    for my $i (1 .. 10) {
+	$app->routes->any( $php_req_handler_path . $t, \&_php_controller );
+	$t = "/*" . $php_template_pname . "_$i" . $t;
+    }
+
+
     $app->routes->any( $php_req_handler_path ."/*" . $php_template_pname,
 		       \&_php_controller );
+
 
     $app->hook( before_dispatch => \&_before_dispatch_hook );
 }
 
 sub _before_dispatch_hook {
-    use Data::Dumper;
     my $c = shift;
     if ($c->req->url->path =~ /\.php$/) {
 
-	my $old_path = $c->req->url->path;
-	$c->req->{__old_path} = $old_path->to_string;
+	my $old_path = $c->req->url->path->to_string;
+	$c->req->{__old_path} = $old_path;
 	$c->req->url->path( $php_req_handler_path . $old_path );
+
+	print STDERR "before_dispatch: rewrite req  $old_path --> ",
+	$c->req->url->path, "\n";
 
     }
 }
@@ -41,9 +53,15 @@ sub _before_dispatch_hook {
 sub _php_controller {
     my $self = shift;
     my $template = $self->param( $php_template_pname );
-
     # it feels a little dirty to touch the mojo.captures stash
     delete $self->stash('mojo.captures')->{ $php_template_pname };
+    for my $i (1 .. 9) {
+	my $dir = $self->param( $php_template_pname . "_$i" );
+	last unless $dir;
+	$template = "$dir/$template";
+	delete $self->stash('mojo.captures')->{ $php_template_pname . "_$i" };
+    }
+
     $self->req->url->path( $self->req->{__old_path} );
     $self->render( template => $template, handler => 'php' );
 }
@@ -56,11 +74,15 @@ sub _template_path {
     foreach my $path (@{$renderer->paths}, @{$c->app->static->paths}) {
 	my $file = catfile($path, split '/', $name);
 	if (-r $file) {
-	    $c->stash('__template_dir', $path);
+	    my @d = split '/', $file;
+	    pop @d;
+	    $c->stash( '__template_dir', join("/", @d) );
 	    return $file;
 	}
     }
-    $c->stash('__template_dir', $renderer->paths->[0]);
+    my @d = split '/', $renderer->paths->[0];
+    pop @d;
+    $c->stash( '__template_dir', join("/", @d) );
     return catfile( $renderer->paths->[0], split '/', $name );
 }
 
@@ -100,6 +122,7 @@ sub _php {
 		      ".:/usr/local/lib/php:$php_dir");
 
 	    pushd($php_dir);
+	    $log->debug("chdir to: $php_dir");
 	    $log->debug( "Rendering template '$t'." );
 	    $$output = $mt->name("template '$t'")->render_file($path,$c);
 	    popd();
@@ -178,7 +201,7 @@ warnings and errors from PHP.
 =item php_header_processor
 
     php_header_processor => sub { 
-        my ($field,$value) = @_; 
+        my ($field,$value,$replace) = @_; 
         ... 
         return $keep_header;
     }

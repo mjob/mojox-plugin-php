@@ -11,10 +11,9 @@ use constant DEBUG =>
 
 our $VERSION = '0.01';
 
-#has [qw(auto_escape compiled)];
-has [qw(code)] => '';
+#has [qw(auto_escape)];
+has [qw(code include_file)] => '';
 has encoding => 'UTF-8';
-#has escape => sub { \&Mojo::Util::xml_escape };
 has name => 'template.php';
 has namespace => 'MojoX::Template::PHPSandbox';
 has template => "";
@@ -26,8 +25,10 @@ sub interpret {
     my $c = shift // {};
     local $SIG{__DIE__} = sub {
 	CORE::die($_[0]) if ref $_[0];
-	Mojo::Exception->throw( shift, [ $self->template, $self->code ] );
+	Mojo::Exception->throw( shift, 
+		[ $self->template, $self->include_file, $self->code ] );
     };
+
     PHP::__reset;
 
     my $callbacks = $c && $c->app->config->{'MojoX::Template::PHP'};
@@ -49,9 +50,9 @@ sub interpret {
 	$params->{_COOKIE} = $cookie_params;
     }
 
-    $params->{_FILES} = $self->_process_uploads($c);
+    $params->{_FILES} = $self->_files_params($c);
 
-    $self->_set_method_params( $c, $params, $variables_order );
+    $self->_set_get_post_request_params( $c, $params, $variables_order );
 
     if (ref $c->req->body eq 'File::Temp') {
 	my $input = join qq//, readline($c->req->body);
@@ -84,29 +85,28 @@ sub interpret {
     }
     $c && $c->stash( 'php_params', $params );
 
-    # TODO:  include_path
-
     my $OUTPUT;
     my $ERROR;
     my $HEADER;
     PHP::options( stdout => sub { $OUTPUT .= $_[0]; } );
     PHP::options(
 	stderr => sub { 
-	    $ERROR .= $_[0]; 
+	    $ERROR .= $_[0];
 	    if ($callbacks && $callbacks->{php_stderr_processor}) {
 		$callbacks->{php_stderr_processor}->($_[0]);
 	    }
 	} );
-    PHP::options( 
+    PHP::options(
 	header => sub { 
 	    my ($keyval, $replace) = @_;
 	    my ($key,$val) = split /: /, $keyval, 2;
 	    my $keep = 1;
 	    if ($callbacks && $callbacks->{php_header_processor}) {
-		$keep &&= $callbacks->{php_header_processor}->($key, $val);
+		$keep &&= $callbacks->{php_header_processor}->($key, $val, $replace);
 	    }
 	    return if !$keep;
 	    if ($replace) {
+
 		$c->res->headers->header($key,$val);
 	    } else {
 		$c->res->headers->add($key,$val);
@@ -122,23 +122,39 @@ sub interpret {
 	    }
 	} );
 
-    $c->app->log->debug("CODE TO EXECUTE:");
-    $c->app->log->debug( $self->code );
+#    $c->app->log->debug("CODE TO EXECUTE:");
+#    $c->app->log->debug( $self->code );
 
     if (my $ipath = $c->stash("__php_include_path")) {
 	PHP::set_include_path( $ipath );
 	$c->app->log->info("include path: $ipath");
     }
 
-#    my $z = eval { PHP::eval( "?>" . $self->code . "<?php ") };
-    my $z = eval { PHP::eval( "?>" . $self->code) };
-#    my $z = eval { PHP::eval(  $self->code  ) };
+    if ($self->include_file) {
+	$c->app->log->info("executing " . $self->include_file
+			   . " in PHP engine");
+	eval { PHP::include( $self->include_file ) };
+    } else {
+	my $len = length($self->code);
+	if ($len < 1000) {
+	    $c->app->log->info("executing code:\n\n" . $self->code
+			       . "\nin PHP engine");
+	} else {
+	    $c->app->log->info("executing $len bytes of code in PHP engine");
+	}
+	eval { PHP::eval( "?>" . $self->code ); };
+    }
+
     if ($@) {
 	$c->app->log->error("PHP error: $@");
+	$c->app->log->error("Output from PHP engine:\n-------------------");
+	$c->app->log->error( $OUTPUT || "<no output>" );
 	$c->res->code(500);
+	undef $@;
     }
 
     my $output = $OUTPUT;
+
     if ($callbacks && $callbacks->{php_output_postprocessor}) {
 	$callbacks->{php_output_postprocessor}->(
 	    \$output, $c && $c->res->headers, $c);
@@ -153,6 +169,12 @@ sub interpret {
 	}
 	if (!$c->res->code) {
 	    $c->res->code(302);
+	} elsif (500 == $c->res->code) {
+	    $c->app->log->info("changing response code from 500 to 302 because there's a location header");
+	    $c->res->code(302);
+	    $c->app->log->info("output is\n\n" . $output);
+	    $c->app->log->info("active exception msg is: $@");
+	    undef $@;
 	}
     }
 
@@ -160,7 +182,7 @@ sub interpret {
     return Mojo::Exception->new( $@, [$self->template, $self->code] );
 }
 
-sub _process_uploads {
+sub _files_params {
     my ($self, $c) = @_;
     my $_files = {};
 
@@ -260,12 +282,11 @@ sub _server_params {
     };
 }
 
-sub _php_method_params {
+sub _mojoparams_to_phpparams {
     my ($query, @order) = @_;
     my $existing_params = {};
     foreach my $name ($query->param) {
 	my @p = $query->param($name);
-#	$existing_params->{$name} = @p > 1 ? $p[-1] : $p[0];
 	$existing_params->{$name} = @p > 1 ? [ @p ] : $p[0];
     }
 
@@ -343,7 +364,7 @@ sub _php_method_params {
     return $new_params;
 }
 
-sub _set_method_params {
+sub _set_get_post_request_params {
     my ($self, $c, $params, $var_order) = @_;
     my $order = PHP::eval_return( 'ini_get("request_order")' ) || $var_order;
     $params->{$_} = {} for qw(_GET _POST _REQUEST);
@@ -352,14 +373,15 @@ sub _set_method_params {
 	if ($query) {
 	    $query =~ s/%(5[BD])/chr hex $1/ge;
 	    my @order = map { s/=.*//; $_ } split /&/, $query;
-	    $params->{_GET} = _php_method_params(
+	    $params->{_GET} = _mojoparams_to_phpparams(
 		 $c->req->url->query, @order );
 	}
     }
 
     if ($var_order =~ /P/ && $c->req->method eq 'POST') {
 	my $order = [ $c->req->body_params->param ];
-	$params->{_POST} = _php_method_params( $c->req->body_params, @$order );
+	$params->{_POST} = _mojoparams_to_phpparams(
+	    $c->req->body_params, @$order );
     }
 
     $params->{_REQUEST} = {};
@@ -382,15 +404,18 @@ sub render {
     my $self = shift;
     my $c = pop if @_ && ref $_[-1];
     $self->code( join '', @_ );
+    $self->include_file('');
     return $self->interpret($c);
 }
 
 sub render_file {
     my ($self, $path) = (shift, shift);
     $self->name($path) unless defined $self->{name};
-    my $template = slurp $path;
-    my $encoding = $self->encoding;
-    return $self->render($template, @_);
+    $self->include_file($path);
+    return $self->interpret(@_);
+#    my $template = slurp $path;
+#    my $encoding = $self->encoding;
+#    return $self->render($template, @_);
 }
 
 unless (caller) {
@@ -473,7 +498,9 @@ L<MojoX::Template::PHP> implements the following attributes:
     my $code = $mt->code;
     $mt = $mt->code($code);
 
-PHP code for template.
+Inline PHP code for template. The L<"interpret"> method
+will check the L<"include_file"> attribute first, and then
+this attribute to decide what to pass to the PHP interpreter.
 
 =head2 encoding
 
@@ -481,6 +508,15 @@ PHP code for template.
     $mt = $mt->encoding( $charset );
 
 Encoding used for template files.
+
+=head2 include_file
+
+    my $file = $mt->include_file;
+    $mt = $mt->include_file( $path );
+
+PHP template file to be interpreted. The L<"interpret"> method
+will check this attribute, and then the L<"code"> attribute
+to decide what to pass to the PHP interpreter.
 
 =head2 name
 
