@@ -55,6 +55,7 @@ sub interpret {
     $self->_set_get_post_request_params( $c, $params, $variables_order );
 
     if (ref $c->req->body eq 'File::Temp') {
+	# XXX - this is Catalyst legacy code, right? remove?
 	my $input = join qq//, readline($c->req->body);
 	if (my $len = length($input)) {
 	    PHP::set_php_input( $input );
@@ -147,10 +148,29 @@ sub interpret {
     }
 
     if ($@) {
+	if (length($OUTPUT) < 1000) {
+	    $c->app->log->error("Output from PHP engine:\n-------------------");
+	    $c->app->log->error( $OUTPUT || "<no output>" );
+	} else {
+	    $c->app->log->error("Output from PHP engine: "
+				. length($OUTPUT) . " bytes");
+	}
 	$c->app->log->error("PHP error: $@");
-	$c->app->log->error("Output from PHP engine:\n-------------------");
-	$c->app->log->error( $OUTPUT || "<no output>" );
-	$c->res->code(500);
+
+	# when does $@ indicate a serious (server) error,
+	# and when can it be ignored? The value of $@ is often
+        # something like "PHP error: PHP::eval failed at 
+	# .../i686-linux/PHP.pm line 25.", which sometimes just
+	# means that WordPress called exit()
+
+	if (!$OUTPUT  && $@ !~ / PHP::eval failed at /) {
+	    # maybe we are changing the response code to 500 too much
+	    $c->app->log->info( "changing response code from "
+				. $c->res->code . " to 500" );
+	    $OUTPUT = $@;
+	    $c->res->code(500);
+	}
+
 	undef $@;
     }
 
@@ -245,7 +265,6 @@ sub _cookie_params {
     # Mojo: $c->req->cookies is [], in Catalyst it is {}
     my $p = { 
 	map {;
-	     print STDERR "COOKIE:  ", $_->name, " => ", $_->value, "\n";
 	     $_->name => url_unescape $_->value
 	} @{$c->req->cookies} };
     return $p;
