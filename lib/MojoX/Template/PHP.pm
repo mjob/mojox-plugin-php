@@ -122,8 +122,21 @@ sub interpret {
 	    }
 	} );
 
+    $c->app->log->debug("CODE TO EXECUTE:");
+    $c->app->log->debug( $self->code );
 
-    my $z = PHP::eval( "?>" . $self->code . "<?php ");
+    if (my $ipath = $c->stash("__php_include_path")) {
+	PHP::set_include_path( $ipath );
+	$c->app->log->info("include path: $ipath");
+    }
+
+#    my $z = eval { PHP::eval( "?>" . $self->code . "<?php ") };
+    my $z = eval { PHP::eval( "?>" . $self->code) };
+#    my $z = eval { PHP::eval(  $self->code  ) };
+    if ($@) {
+	$c->app->log->error("PHP error: $@");
+	$c->res->code(500);
+    }
 
     my $output = $OUTPUT;
     if ($callbacks && $callbacks->{php_output_postprocessor}) {

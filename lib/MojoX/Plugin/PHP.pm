@@ -34,38 +34,16 @@ sub _before_dispatch_hook {
 	my $old_path = $c->req->url->path;
 	$c->req->{__old_path} = $old_path->to_string;
 	$c->req->url->path( $php_req_handler_path . $old_path );
-#	print STDERR "Controller is ", Dumper($c);
-    }
-}
 
-sub _after_static_hook {
-    use Data::Dumper;
-    my $c = shift;
-    if ($c->req->url->path =~ /\.php$/) {
-	local $Data::Dumper::Indent = 1;
-	local $Data::Dumper::Sortkeys = 1;
-	print STDERR "Controller is ", Dumper($c);
-	delete $c->stash->{'mojo.static'};
-	delete $c->stash->{'mojo.finished'};
-	delete $c->stash->{'mojo.rendered'};
-	$c->stash( 'mojox.php', 1 );
     }
-}
-
-sub _before_routes_hook {
-    my $c = shift;
-    if ($c->stash('mojox.php')) {
-	$c->req->url->path('/hello11');
-    }
-    print STDERR "path is ", $c->req->url->path, "\n\n";
-    print STDERR "stash is ", Dumper($c->stash), "\n\n";
-    my $y = 512;
 }
 
 sub _php_controller {
     my $self = shift;
     my $template = $self->param( $php_template_pname );
-    $self->param( $php_template_pname, undef );
+
+    # it feels a little dirty to touch the mojo.captures stash
+    delete $self->stash('mojo.captures')->{ $php_template_pname };
     $self->req->url->path( $self->req->{__old_path} );
     $self->render( template => $template, handler => 'php' );
 }
@@ -77,8 +55,12 @@ sub _template_path {
 
     foreach my $path (@{$renderer->paths}, @{$c->app->static->paths}) {
 	my $file = catfile($path, split '/', $name);
-	return $file if -r $file;
+	if (-r $file) {
+	    $c->stash('__template_dir', $path);
+	    return $file;
+	}
     }
+    $c->stash('__template_dir', $renderer->paths->[0]);
     return catfile( $renderer->paths->[0], split '/', $name );
 }
 
@@ -107,9 +89,21 @@ sub _php {
 	return undef unless my $t = _template_name($renderer, $c, $options);
 	$mt->template($t);
 
+	
+
 	if (-r $path) {
+	    use File::Tools qw(pushd popd);
+	    my $php_dir = $c->stash('__template_dir') || ".";
+
+	    # XXX - need more consistent way of setting the include path
+	    $c->stash("__php_include_path", 
+		      ".:/usr/local/lib/php:$php_dir");
+
+	    pushd($php_dir);
 	    $log->debug( "Rendering template '$t'." );
 	    $$output = $mt->name("template '$t'")->render_file($path,$c);
+	    popd();
+	    $c->stash("__template_dir", undef);
 	} elsif (my $d = $renderer->get_data_template($options)) {
 	    $log->debug( "Rendering template '$t' from DATA section" );
 	    $$output = $mt->name("template '$t' from DATA section")

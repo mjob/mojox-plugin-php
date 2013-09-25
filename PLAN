@@ -1,3 +1,7 @@
+Thoughts left lying around about how to use PHP as a templating
+system with Mojolicious. This should not really be in the
+MANIFEST but I guess it's OK for it to be in the git repository.
+------------------------------------------------------------------
 
 If you wanted to use PHP as a templating system within Mojolicious,
 what would it look like?
@@ -66,6 +70,19 @@ Are there plugins involved?
     4. prepend "my $self=shift; ... ; use strict;' to the template
     5. render with EPLRenderer ... Mojo::Template
 
+    Current solution
+    ----------------
+    I grok plugins better. Our MojoX::Plugin::PHP class does:
+    1. sets some app config (callbacks that can be invoked while
+       a PHP template is being processed)
+    2. set the php mime type (this isn't that important)
+    3. set a handler for the 'php' format
+    4. create a single but generic route for all PHP template
+       processing. The route is hard to guess.
+    5. register a  before_dispatch  hook that identifies requests
+       for a PHP template and rewrites the request to channel it
+       to the generic PHP route
+
 A-ha, so  Mojo::Template  is the engine for processing .ep (embedded Perl)
 templates? Then I reckon PHP processing involves a PHP plugin based on
 Mojolicious::Plugin::EPLRenderer  and a PHP processing engine based on
@@ -90,6 +107,14 @@ the request.
     file, just call $next->(). If it is for a PHP file, skip the router?
     Rewrite the router? Change the route to use the PHP controller?
     I'm not sure.
+
+    Current solution:
+    -----------------
+    Register a  before_dispatch  hook that
+    1. identifies requests for PHP templates
+    2. rewrites the request so that it will be dispatched to the
+       PHP handler (the PHP handler will restore the original
+       request settings)
 
 Miscellaneous note: the defaults method
 
@@ -141,6 +166,10 @@ Still need to test:
     cookies
     php_stderr_processor callback
     t/12-postprocess manipulate headers
+    files that don't have a closing  ?>  tag
+    directories
+      a PHP script ought to be able to say  include('./foo.php')
+      and access the foo.php script in the same directory
 
 FEATURE PLAN, OUTSTANDING ISSUES
 --------------------------------
@@ -166,3 +195,7 @@ What should it do?
 
 Mojolicious::Plugin::EPRenderer sets  auto_escape  to "avoid XSS attacks".
 Does this plugin need to avoid XSS attacks?
+
+What happens when the PHP code references the current directory ./ ?
+We should change directory to the path where the template was found,
+and change back when PHP is done.
