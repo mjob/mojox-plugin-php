@@ -148,7 +148,7 @@ sub interpret {
     }
 
     if ($@) {
-	if (length($OUTPUT) < 1000) {
+	if (length($OUTPUT || "") < 1000) {
 	    $c->app->log->error("Output from PHP engine:\n-------------------");
 	    $c->app->log->error( $OUTPUT || "<no output>" );
 	} else {
@@ -163,7 +163,7 @@ sub interpret {
 	# .../i686-linux/PHP.pm line 25.", which sometimes just
 	# means that WordPress called exit()
 
-	if (!$OUTPUT  && $@ !~ / PHP::eval failed at /) {
+	if (!$OUTPUT  && $@ !~ /PHP::eval failed at /) {
 	    # maybe we are changing the response code to 500 too much
 	    $c->app->log->info( "changing response code from "
 				. $c->res->code . " to 500" );
