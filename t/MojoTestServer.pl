@@ -24,4 +24,5 @@ Typical usage:
 
     perl t/MojoTestServer.pl get /foo.php
 
+=cut
 

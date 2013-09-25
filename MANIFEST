@@ -19,6 +19,7 @@ t/20-upload.t
 t/21-redirect.t
 t/22-utf8.t
 t/23-include.t
+t/24-cookies.t
 t/MojoTestServer.pm
 t/manifest.t
 t/pod-coverage.t
@@ -48,9 +49,11 @@ t/public/php/vars.php
 t/public/php/warnings.php
 t/templates/body.php
 t/templates/body2.php
+t/templates/clear-cookie.php
 t/templates/compile-error.php
 t/templates/echo.php
 t/templates/error.php
+t/templates/get-cookie.php
 t/templates/globals.php
 t/templates/handle_upload.php
 t/templates/header_compute.php
@@ -71,6 +74,7 @@ t/templates/redirect_destination.php
 t/templates/redirect_destination2.php
 t/templates/redirectx.php
 t/templates/runtime-error.php
+t/templates/set-cookie.php
 t/templates/vars.php
 t/templates/warnings.php
 t/testapp.conf

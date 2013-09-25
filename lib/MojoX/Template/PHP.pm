@@ -102,11 +102,12 @@ sub interpret {
 	    my ($key,$val) = split /: /, $keyval, 2;
 	    my $keep = 1;
 	    if ($callbacks && $callbacks->{php_header_processor}) {
-		$keep &&= $callbacks->{php_header_processor}->($key, $val, $replace);
+		$keep &&= $callbacks->{php_header_processor}
+				    ->($key, $val, $replace);
 	    }
 	    return if !$keep;
-	    if ($replace) {
 
+	    if ($replace) {
 		$c->res->headers->header($key,$val);
 	    } else {
 		$c->res->headers->add($key,$val);
@@ -240,10 +241,12 @@ sub _cookie_params {
     if (@{$c->req->cookies}) {
 	$DB::single = 'cookies!';
     }
+
     # Mojo: $c->req->cookies is [], in Catalyst it is {}
-    my $p = { map {;
-		 $_ => $c->req->cookies->{$_}{value}[0]
-	      } @{$c->req->cookies} };
+    my $p = { 
+	map {;
+	     $_->name => $_->value
+	} @{$c->req->cookies} };
     return $p;
 }
 

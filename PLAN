@@ -200,4 +200,24 @@ What happens when the PHP code references the current directory ./ ?
 We should change directory to the path where the template was found,
 and change back when PHP is done.
 
-PHP __FILE__ token resolves to "Embedded code". How to correct this?
+_X_ PHP __FILE__ token resolves to "Embedded code". How to correct this?
+    By using PHP::include($file) instead of PHP::eval(slurp $file)
+
+Suppose PHP wants to set a cookie. Suppose PHP wants to set multiple cookies.
+None of the tests in Catalyst::View::Template::PHP cover this.
+What is the regular cookie workflow?
+    1. Server sends a "Set-Cookie" header with value in a format like:
+       <name>=<urlencoded-value>; expires=...; path=...;
+    2. Client is responsible for storing the cookie along with the
+       server's host name
+    3. On next request, client extracts the relevant cookies for the
+       current host and path, and includes them in one or more request 
+       headers
+    4. Server receives Cookie request headers from the client,
+       and may also receive cookie data in the HTTP_COOKIE environment
+       variable.
+
+And what is the workflow when Mojolicious forwards a request to PHP?
+    1b. Mojo includes Set-Cookie headers from PHP in its response
+    4b. convert Cookie request headers into $_SERVER[HTTP_COOKIE]
+        and $_COOKIE[name] data in PHP
