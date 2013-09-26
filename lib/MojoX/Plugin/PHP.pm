@@ -28,11 +28,8 @@ sub register {
 	$t = "/*" . $php_template_pname . "_$i" . $t;
     }
 
-
     $app->routes->any( $php_req_handler_path ."/*" . $php_template_pname,
 		       \&_php_controller );
-
-
     $app->hook( before_dispatch => \&_before_dispatch_hook );
 }
 
@@ -40,6 +37,7 @@ sub _rewrite_req_for_php_handler {
     my ($c, $path_to_restore, $path_to_request) = @_;
     $c->req->{__old_path} = $path_to_restore;
     $c->req->url->path( $php_req_handler_path . $path_to_request );
+#    print STDERR "rewrite req $path_to_restore => $php_req_handler_path.$path_to_request\n";
 }
 
 sub _path_contains_index_php {
@@ -56,8 +54,7 @@ sub _path_contains_index_php {
 
 sub _before_dispatch_hook {
     my $c = shift;
-    my $old_path = $c->req->url->path;
-    $DB::single ||= $old_path =~ /dir-/;
+    my $old_path = $c->req->url->path->to_string;
     if ($old_path =~ /\.php$/) {
 	_rewrite_req_for_php_handler( $c, $old_path, $old_path );
     } elsif ($old_path =~ m{/$}) {
@@ -131,8 +128,6 @@ sub _php {
 	$mt->encoding( $renderer->encoding ) if $renderer->encoding;
 	return undef unless my $t = _template_name($renderer, $c, $options);
 	$mt->template($t);
-
-	
 
 	if (-r $path) {
 	    use File::Tools qw(pushd popd);

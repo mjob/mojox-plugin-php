@@ -190,3 +190,12 @@ What should it do?
 
 Mojolicious::Plugin::EPRenderer sets  auto_escape  to "avoid XSS attacks".
 Does this plugin need to avoid XSS attacks?
+
+Current stumbling block in WordPress application:
+	PHP Warning:  fopen(http://countylici.ous:3000/wp-cron.php?
+		doing_wp_cron=1380161111.9717490673065185546875): 
+		failed to open stream: HTTP request failed!  in 
+		/home/mobrien/libperl/MojoX-Plugin-PHP/t/wp/wp-includes
+			/class-http.php on line 921
+
+well, it "worked" when I published it again
