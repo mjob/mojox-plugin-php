@@ -165,14 +165,13 @@ Still need to test:
 
     php_stderr_processor callback
     t/12-postprocess manipulate headers
+    inline templates
 
 FEATURE PLAN, OUTSTANDING ISSUES
 --------------------------------
 
 hooks in MojoX::Template::PHP::interpret:
     allow multiple callbacks to be registered on each hook?
-
-still need to copy cookie data to $_COOKIE
 
 how does PHP determine the "name" of an upload? We are adding a
 "name" header but that's not what a file upload will look like in
@@ -197,5 +196,3 @@ Current stumbling block in WordPress application:
 		failed to open stream: HTTP request failed!  in 
 		/home/mobrien/libperl/MojoX-Plugin-PHP/t/wp/wp-includes
 			/class-http.php on line 921
-
-well, it "worked" when I published it again

@@ -81,4 +81,15 @@ ok( $content =~ /_ENV = array/ &&
 ok( $content =~ /_COOKIE = array *\(\s*\)/, '$_COOKIE is empty' );
 
 
+# can we edit the stash?
+$t->app->config->{'MojoX::Template::PHP'}{php_var_preprocessor} = sub {
+    $_[0]->{stash1} = "stash variable 1";
+    $_[0]->{stash2} = "STASH VARIABLE 2";
+};
+$t->get_ok('/stash.php')->status_is(200)
+    ->content_like( qr/\$stash1 = stash variable 1/,
+		    'var preprocessor updates PHP global var')
+    ->content_like( qr/\$stash2 = STASH VARIABLE 2/ );
+
+
 done_testing();
