@@ -40,8 +40,6 @@ sub _rewrite_req_for_php_handler {
     my ($c, $path_to_restore, $path_to_request) = @_;
     $c->req->{__old_path} = $path_to_restore;
     $c->req->url->path( $php_req_handler_path . $path_to_request );
-
-    print STDERR "rewrite req: $path_to_restore -> ", $c->req->url->path, "\n";
 }
 
 sub _path_contains_index_php {
@@ -50,7 +48,6 @@ sub _path_contains_index_php {
     foreach my $dir (@{$app->renderer->paths}, @{$app->static->paths}) {
 	my $file = catfile( split('/', $dir), split('/',$path), 'index.php' );
 	if (-r $file) {
-	    print STDERR "[index.php] file found under $file\n";
 	    return $file;
 	}
     }
