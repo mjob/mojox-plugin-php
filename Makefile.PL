@@ -18,8 +18,12 @@ WriteMakefile(
         'Test::More' => 0,
     },
     PREREQ_PM => {
+	'File::Spec::Functions' => 0,
+	'File::Temp' => 0,
+	'File::Tools' => 0,
 	Mojolicious => 4.0,
 	PHP => 0.15,
+	'Sys::Hostname' => 0,
     },
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean => { FILES => 'MojoX-Plugin-PHP-*' },
