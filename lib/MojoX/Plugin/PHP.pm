@@ -36,17 +36,41 @@ sub register {
     $app->hook( before_dispatch => \&_before_dispatch_hook );
 }
 
+sub _rewrite_req_for_php_handler {
+    my ($c, $path_to_restore, $path_to_request) = @_;
+    $c->req->{__old_path} = $path_to_restore;
+    $c->req->url->path( $php_req_handler_path . $path_to_request );
+
+    print STDERR "rewrite req: $path_to_restore -> ", $c->req->url->path, "\n";
+}
+
+sub _path_contains_index_php {
+    my ($path, $c) = @_;
+    my $app = $c->app;
+    foreach my $dir (@{$app->renderer->paths}, @{$app->static->paths}) {
+	my $file = catfile( split('/', $dir), split('/',$path), 'index.php' );
+	if (-r $file) {
+	    print STDERR "[index.php] file found under $file\n";
+	    return $file;
+	}
+    }
+    return;
+}
+
 sub _before_dispatch_hook {
     my $c = shift;
-    if ($c->req->url->path =~ /\.php$/) {
-
-	my $old_path = $c->req->url->path->to_string;
-	$c->req->{__old_path} = $old_path;
-	$c->req->url->path( $php_req_handler_path . $old_path );
-
-	print STDERR "before_dispatch: rewrite req  $old_path --> ",
-	$c->req->url->path, "\n";
-
+    my $old_path = $c->req->url->path;
+    $DB::single ||= $old_path =~ /dir-/;
+    if ($old_path =~ /\.php$/) {
+	_rewrite_req_for_php_handler( $c, $old_path, $old_path );
+    } elsif ($old_path =~ m{/$}) {
+	if (_path_contains_index_php($old_path, $c)) {
+	    _rewrite_req_for_php_handler($c, $old_path, $old_path.'index.php');
+	}
+    } else {
+	if (_path_contains_index_php($old_path, $c)) {
+	    _rewrite_req_for_php_handler($c,$old_path,$old_path.'/index.php');
+	}
     }
 }
 

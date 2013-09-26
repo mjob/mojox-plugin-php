@@ -30,4 +30,13 @@ ok( $phpinfo_content =~ /Variable.*Value/, 'phpinfo contains variable data' );
 ok( $phpinfo_content =~ /_SERVER/ && $phpinfo_content =~ /_ENV/,
     'phpinfo contains variable info' );
 
+# /foo and /foo/ should run (run, not redirect) /foo/index.php
+# if /foo/index.php is accessible. Otherwise, they should 404
+# or drop through to whatever route they were going to take.
+
+$t->get_ok('/dir-b')->status_is(200)->content_like(qr/hello world/i);
+$t->get_ok('/dir-b/')->status_is(200)->content_like(qr/hello world/i);
+
+$t->get_ok('/dir-a')->status_is(404);
+$t->get_ok('/dir-a/')->status_is(404);
 done_testing();

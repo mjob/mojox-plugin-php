@@ -166,7 +166,7 @@ sub interpret {
 	if (!$OUTPUT  && $@ !~ /PHP::eval failed at /) {
 	    # maybe we are changing the response code to 500 too much
 	    $c->app->log->info( "changing response code from "
-				. $c->res->code . " to 500" );
+				. ($c->res->code || "") . " to 500" );
 	    $OUTPUT = $@;
 	    $c->res->code(500);
 	}
