@@ -51,8 +51,11 @@ t/templates/body.php
 t/templates/body2.php
 t/templates/clear-cookie.php
 t/templates/compile-error.php
+t/templates/dir-a/hello20.php
+t/templates/dir-b/index.php
 t/templates/echo.php
 t/templates/error.php
+t/templates/exit.php
 t/templates/get-cookie.php
 t/templates/globals.php
 t/templates/handle_upload.php
@@ -66,7 +69,10 @@ t/templates/hello21.php
 t/templates/hello_utf8.php
 t/templates/include.php
 t/templates/include1.php
+t/templates/include2/foo.php
 t/templates/include2/include3.php
+t/templates/include4.php
+t/templates/no-exit.php
 t/templates/output_upload.php
 t/templates/phpinfo.php
 t/templates/redirect.php
@@ -75,6 +81,7 @@ t/templates/redirect_destination2.php
 t/templates/redirectx.php
 t/templates/runtime-error.php
 t/templates/set-cookie.php
+t/templates/stash.php
 t/templates/vars.php
 t/templates/warnings.php
 t/testapp.conf
