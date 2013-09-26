@@ -12,6 +12,7 @@ t/04-post.t
 t/05-server.t
 t/06-env.t
 t/07-raw.t
+t/08-inline.t
 t/10-headers.t
 t/11-globals.t
 t/12-postprocess.t
