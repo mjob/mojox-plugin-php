@@ -53,6 +53,8 @@ sub _compute_from_header {
     return 0;  # don't include header with response
 }
 
+# flexible output postprocessor that can be updated at runtime
+# see t/12-postprocess.t
 sub _postprocess_php_output {
     our $postprocessor;
     $postprocessor && $postprocessor->(@_);

@@ -23,6 +23,7 @@ sub interpret {
 
     my $self = shift;
     my $c = shift // {};
+    my $log = $c->app->log;
     local $SIG{__DIE__} = sub {
 	CORE::die($_[0]) if ref $_[0];
 	Mojo::Exception->throw( shift, 
@@ -54,25 +55,11 @@ sub interpret {
 
     $self->_set_get_post_request_params( $c, $params, $variables_order );
 
-    if (ref $c->req->body eq 'File::Temp') {
-	# XXX - this is Catalyst legacy code, right? remove?
-	my $input = join qq//, readline($c->req->body);
-	if (my $len = length($input)) {
-	    PHP::set_php_input( $input );
-	    $params->{HTTP_RAW_POST_DATA} = $input;
-	    if ($len < 500) {
-		$c->app->log->debug('$HTTP_RAW_POST_DATA: ' . $input);
-	    } else {
-		$c->app->log->debug('$HTTP_RAW_POST_DATA: ' . $len . ' bytes');
-	    }
-	}
-    } elsif (1) {
-	# XXX - should we always set $HTTP_RAW_POST_DATA?
-	my $input = $c->req->body;
-	if (my $len = length($input)) {
-	    PHP::set_php_input( $input );
-	    $params->{HTTP_RAW_POST_DATA} = $input;
-	}
+    # XXX - should we always set $HTTP_RAW_POST_DATA?
+    my $input = $c->req->body;
+    if (my $len = length($input)) {
+	PHP::set_php_input( "$input" );
+	$params->{HTTP_RAW_POST_DATA} = "$input";
     }
 
     # hook to make adjustments to  %$params
@@ -85,6 +72,7 @@ sub interpret {
 	PHP::assign_global($param_name, $param_value);
     }
     $c && $c->stash( 'php_params', $params );
+
 
     my $OUTPUT;
     my $ERROR;
@@ -118,44 +106,41 @@ sub interpret {
 		if ($code) {
 		    $c->res->code($code);
 		} else {
-		    $c->app->log->error("Unrecognized Status header: '"
+		    $log->error("Unrecognized Status header: '"
 					. $keyval . "' from PHP");
 		}
 	    }
 	} );
 
-#    $c->app->log->debug("CODE TO EXECUTE:");
-#    $c->app->log->debug( $self->code );
-
     if (my $ipath = $c->stash("__php_include_path")) {
 	PHP::set_include_path( $ipath );
-	$c->app->log->info("include path: $ipath");
+	$log->info("include path: $ipath");
     }
 
     if ($self->include_file) {
-	$c->app->log->info("executing " . $self->include_file
+	$log->info("executing " . $self->include_file
 			   . " in PHP engine");
 	eval { PHP::include( $self->include_file ) };
     } else {
 	my $len = length($self->code);
 	if ($len < 1000) {
-	    $c->app->log->info("executing code:\n\n" . $self->code
+	    $log->info("executing code:\n\n" . $self->code
 			       . "\nin PHP engine");
 	} else {
-	    $c->app->log->info("executing $len bytes of code in PHP engine");
+	    $log->info("executing $len bytes of code in PHP engine");
 	}
 	eval { PHP::eval( "?>" . $self->code ); };
     }
 
     if ($@) {
 	if (length($OUTPUT || "") < 1000) {
-	    $c->app->log->error("Output from PHP engine:\n-------------------");
-	    $c->app->log->error( $OUTPUT || "<no output>" );
+	    $log->error("Output from PHP engine:\n-------------------");
+	    $log->error( $OUTPUT || "<no output>" );
 	} else {
-	    $c->app->log->error("Output from PHP engine: "
+	    $log->error("Output from PHP engine: "
 				. length($OUTPUT) . " bytes");
 	}
-	$c->app->log->error("PHP error: $@");
+	$log->error("PHP error: $@");
 
 	# when does $@ indicate a serious (server) error,
 	# and when can it be ignored? The value of $@ is often
@@ -165,7 +150,7 @@ sub interpret {
 
 	if (!$OUTPUT  && $@ !~ /PHP::eval failed at /) {
 	    # maybe we are changing the response code to 500 too much
-	    $c->app->log->info( "changing response code from "
+	    $log->info( "changing response code from "
 				. ($c->res->code || "") . " to 500" );
 	    $OUTPUT = $@;
 	    $c->res->code(500);
@@ -182,19 +167,18 @@ sub interpret {
     }
     if ($c->res->headers->header('Location')) {
 
-	# this is disappointing.
-	# if the $output string is empty, Mojo will automatically
-	# set a 404 status code?
+	# this is disappointing. if the $output string is empty,
+	# Mojo will automatically sets a 404 status code?
 	if ("" eq ($output // "")) {
 	    $output = chr(0);
 	}
 	if (!$c->res->code) {
 	    $c->res->code(302);
 	} elsif (500 == $c->res->code) {
-	    $c->app->log->info("changing response code from 500 to 302 because there's a location header");
+	    $log->info("changing response code from 500 to 302 because there's a location header");
 	    $c->res->code(302);
-	    $c->app->log->info("output is\n\n" . $output);
-	    $c->app->log->info("active exception msg is: " . ($@ || ""));
+	    $log->info("output is\n\n" . $output);
+	    $log->info("active exception msg is: " . ($@ || ""));
 	    undef $@;
 	}
     }
