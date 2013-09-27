@@ -209,3 +209,5 @@ MojoX::PHP::Plugin and MojoX::PHP::Template?
 
 Or maybe I want to name it  Mojolicious::Plugin::PHP ? There are 
 currently no  MojoX::Plugin::xxx  modules that I'm aware of.
+
+UTF-8 issue?

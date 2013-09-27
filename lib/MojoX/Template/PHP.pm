@@ -32,6 +32,11 @@ sub interpret {
 
     PHP::__reset;
 
+    # XXX - are there any request headers that DON'T affect the
+    #       superglobals but DO change the behavior of PHP?
+    #       How do we pass the request headers to PHP? 
+    #       Do they go in the $_REQUEST variable??
+
     my $callbacks = $c && $c->app->config->{'MojoX::Template::PHP'};
     $callbacks ||= {};
 
@@ -75,18 +80,20 @@ sub interpret {
 
 
     my $OUTPUT;
-    my $ERROR;
-    my $HEADER;
-    PHP::options( stdout => sub { $OUTPUT .= $_[0]; } );
+    my $ERROR = "";
+    PHP::options( 
+	stdout => sub {
+	    $OUTPUT .= $_[0];
+	} );
     PHP::options(
-	stderr => sub { 
+	stderr => sub {
 	    $ERROR .= $_[0];
 	    if ($callbacks && $callbacks->{php_stderr_processor}) {
 		$callbacks->{php_stderr_processor}->($_[0]);
 	    }
 	} );
     PHP::options(
-	header => sub { 
+	header => sub {
 	    my ($keyval, $replace) = @_;
 	    my ($key,$val) = split /: /, $keyval, 2;
 	    my $keep = 1;
@@ -130,6 +137,22 @@ sub interpret {
 	    $log->info("executing $len bytes of code in PHP engine");
 	}
 	eval { PHP::eval( "?>" . $self->code ); };
+    }
+
+    # what is the encoding of output ?
+    my $content_type = $c->res->headers->content_type || "";
+    if ($content_type) {
+	if ($content_type =~ /charset=.?utf-?8/i) {
+	    # Isn't Mojo just going to encode it again
+	    $OUTPUT = decode("UTF-8", $OUTPUT);
+	    $ERROR = decode("UTF-8", $ERROR);
+	} elsif ($content_type =~ /charset=["'](.*?)["']/) {
+	    $OUTPUT = decode($1, $OUTPUT);
+	    $ERROR = decode($1, $ERROR);
+	} elsif ($content_type =~ /charset=(\S+?)/) {
+	    $OUTPUT = decode($1, $OUTPUT);
+	    $ERROR = decode($1, $ERROR);
+	}
     }
 
     if ($@) {

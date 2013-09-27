@@ -16,7 +16,7 @@ use Encode;
     my $content = $t->tx->res->body;
     my $content2 = Encode::decode("utf-8", $content);
     ok($content ne $content2, 'PHP output contains wide chars' );
-    $t->content_is( Encode::encode("utf-8", "Xin chào thế giới" ) );
+    $t->content_is( "Xin chào thế giới" );
 }
 
 done_testing();

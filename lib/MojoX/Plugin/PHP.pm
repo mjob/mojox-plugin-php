@@ -178,6 +178,9 @@ MojoX::Plugin::PHP - enable PHP templates in your Mojolicious application
 L<MojoX::Plugin::PHP> establishes a PHP engine as the default
 handler for C<php> files and templates.
 
+[XXX - normal use: request for  /blah/blah.php ]
+[XXX - inline use inside a controller for that nifty php library]
+
 =head1 CONFIG
 
 There are four hooks in the PHP template processing engine
@@ -268,6 +271,30 @@ want the application to follow it.
     $plugin->register(Mojolicious->new);
 
 Register renderer in L<Mojolicious> application.
+
+=head1 COMMUNICATION BETWEEN PERL AND PHP
+
+As mentioned in the L<"php_header_processor" documentation in the CONFIG section above|"php_header_processor">,
+it is possible to use the header callback mechanism to execute
+arbitrary Perl code from PHP and to set up a communication channel
+between your application's PHP scripts and the Perl program running
+your Mojolicious application. Let's demonstrate with a simple example:
+
+   [insert simple example here: Collatz conjecture?]
+
+Other ways you might use this feature include:
+
+=over 4
+
+=item have PHP execute functions or use modules that are hard to
+implement in Perl or only available in Perl
+
+=item have PHP manipulate data in your app's Perl model
+
+=item perform authentication or other function in PHP that changes
+the state on the Perl side of your application
+
+=back
 
 =head1 SEE ALSO
 
