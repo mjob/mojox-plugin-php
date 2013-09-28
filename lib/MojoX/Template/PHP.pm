@@ -145,13 +145,10 @@ sub interpret {
 	if ($content_type =~ /charset=.?utf-?8/i) {
 	    # Isn't Mojo just going to encode it again
 	    $OUTPUT = decode("UTF-8", $OUTPUT);
-	    $ERROR = decode("UTF-8", $ERROR);
 	} elsif ($content_type =~ /charset=["'](.*?)["']/) {
 	    $OUTPUT = decode($1, $OUTPUT);
-	    $ERROR = decode($1, $ERROR);
 	} elsif ($content_type =~ /charset=(\S+?)/) {
 	    $OUTPUT = decode($1, $OUTPUT);
-	    $ERROR = decode($1, $ERROR);
 	}
     }
 
@@ -180,6 +177,9 @@ sub interpret {
 	}
 
 	undef $@;
+    }
+    if ($ERROR) {
+	$log->warn("Error from PHP: $ERROR");
     }
 
     my $output = $OUTPUT;
