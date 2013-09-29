@@ -15,7 +15,6 @@ our $VERSION = '0.01';
 has [qw(code include_file)] => '';
 has encoding => 'UTF-8'; # documented, not used
 has name => 'template.php';
-#has namespace => 'MojoX::Template::PHPSandbox'; # documented, not used
 has template => "";
 
 sub interpret {
@@ -538,16 +537,6 @@ to decide what to pass to the PHP interpreter.
 Name of the template currently being processed. Defaults to
 C<template.php>. This value should not contain quotes or
 newline characters, or error messages might end up being wrong.
-
-=cut
-
-#=head2 namespace
-#
-#    my $namespace = $mt->namespace;
-#    $mt = $mt->namespace('PHP::Sandbox');
-#
-#Namespace used to compile templates, defaults to
-#C<MojoX::Template::PHPSandbox>. 
 
 =head2 template
 
