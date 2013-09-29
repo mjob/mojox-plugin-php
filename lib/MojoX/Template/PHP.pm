@@ -13,9 +13,9 @@ our $VERSION = '0.01';
 
 #has [qw(auto_escape)];
 has [qw(code include_file)] => '';
-has encoding => 'UTF-8';
+#has encoding => 'UTF-8'; # documented, not used
 has name => 'template.php';
-has namespace => 'MojoX::Template::PHPSandbox';
+#has namespace => 'MojoX::Template::PHPSandbox'; # documented, not used
 has template => "";
 
 sub interpret {
@@ -475,7 +475,7 @@ EOF
 
 =head1 NAME
 
-MojoX::Template::PHP - Use PHP as templating system in Mojolicious
+MojoX::Template::PHP - PHP templates in Mojolicious applications
 
 =head1 VERSION
 
@@ -495,11 +495,13 @@ MojoX::Template::PHP - Use PHP as templating system in Mojolicious
     EOF
     say $output;
 
+    my $output = $mt->render_file( '/path/to/some/template.php' );
+    say $output;
+
 =head1 DESCRIPTION
 
 L<MojoX::Template::PHP> is a way to use PHP as a templating
-system for your PHP application. Why would anyone, anywhere,
-ever want to do this? Here are two that I can think of
+system for your Mojolicious application. 
 
 =over 4
 
@@ -525,12 +527,14 @@ Inline PHP code for template. The L<"interpret"> method
 will check the L<"include_file"> attribute first, and then
 this attribute to decide what to pass to the PHP interpreter.
 
-=head2 encoding
+=cut
 
-    my $encoding = $mt->encoding;
-    $mt = $mt->encoding( $charset );
-
-Encoding used for template files.
+#=head2 encoding
+#
+#    my $encoding = $mt->encoding;
+#    $mt = $mt->encoding( $charset );
+#
+#Encoding used for template files.
 
 =head2 include_file
 
@@ -550,13 +554,15 @@ Name of the template currently being processed. Defaults to
 C<template.php>. This value should not contain quotes or
 newline characters, or error messages might end up being wrong.
 
-=head2 namespace
+=cut
 
-    my $namespace = $mt->namespace;
-    $mt = $mt->namespace('PHP::Sandbox');
-
-Namespace used to compile templates, defaults to
-C<MojoX::Template::PHPSandbox>. 
+#=head2 namespace
+#
+#    my $namespace = $mt->namespace;
+#    $mt = $mt->namespace('PHP::Sandbox');
+#
+#Namespace used to compile templates, defaults to
+#C<MojoX::Template::PHPSandbox>. 
 
 =head2 template
 
@@ -593,11 +599,13 @@ Render a PHP template.
 
 Render template file.
 
-=head1 DEBUGGING
+=cut
 
-You can set either the C<MOJO_TEMPLATE_DEBUG> or
-C<MOJOX_TEMPLATE_PHP_DEBUG> environment variable to enable
-some diagnostics information printed to C<STDERR>.
+#=head1 DEBUGGING
+#
+#You can set either the C<MOJO_TEMPLATE_DEBUG> or
+#C<MOJOX_TEMPLATE_PHP_DEBUG> environment variable to enable
+#some diagnostics information printed to C<STDERR>.
 
 =head1 SEE ALSO
 

@@ -162,7 +162,8 @@ sub _php {
 
 =head1 NAME
 
-MojoX::Plugin::PHP - enable PHP templates in your Mojolicious application
+MojoX::Plugin::PHP - use PHP as a templating system in your
+Mojolicious application!
 
 =head1 VERSION
 
@@ -209,7 +210,7 @@ and have a PHP interpreter process your file, and Mojolicious
 return a response as if it the request were processed in
 Apache with mod_php.
 
-Why would anyone want to do this? Here are a couple I
+Why would anyone want to do this? Here are a couple of reasons I
 can think of:
 
 =over 4
@@ -314,15 +315,14 @@ want the application to follow it.
 
     $plugin->register(Mojolicious->new);
 
-Register renderer in L<Mojolicious> application.
+Register the php renderer in L<Mojolicious> application.
 
 =head1 COMMUNICATION BETWEEN PERL AND PHP
 
 As mentioned in the L<"php_header_processor" documentation in the CONFIG section above|"php_header_processor">,
 it is possible to use the header callback mechanism to execute
-arbitrary Perl code from PHP and to set up a communication channel
-between your application's PHP scripts and the Perl program running
-your Mojolicious application. 
+arbitrary Perl code from PHP and to establish a communication channel
+between your PHP scripts and your Mojolicious application.
 
 Let's demonstrate with a simple example:
 
@@ -344,24 +344,24 @@ and return the number of steps in the response. Our C<collatz.php>
 template looks like:
 
     <?php
-    $nsteps = 0;
-    $n = $_GET['n'];
-    while ($n > 1) {
+      $nsteps = 0;
+      $n = $_GET['n'];
+      while ($n > 1) {
         if ($n % 2 == 0) {
-            $n = divide_by_two($n);
+          $n = divide_by_two($n);
         } else {
-            $n = triple_plus_one($n);
+          $n = triple_plus_one($n);
         }
         $nsteps++;
-    }
+      }
 
-    function divide_by_two($x) {
+      function divide_by_two($x) {
         return $x / 2;
-    }
+      }
 
-    function triple_plus_one($x) {
+      function triple_plus_one($x) {
         ...
-    }
+      }
     ?>
     number of Collatz steps is <?php echo $nsteps; ?>
 
@@ -378,7 +378,7 @@ To use this channel to perform work in PHP, we need
 =item 1. a C<MojoX::Plugin::PHP> header callback function that
 listens for a specific header
 
-=item 2. PHP code to send that header
+=item 2. PHP code to produce that header
 
 =item 3. an agreed upon global PHP variable, that Perl code
 can set (with L<< the C<PHP::assign_global> function|"assign_global"/PHP >>)
