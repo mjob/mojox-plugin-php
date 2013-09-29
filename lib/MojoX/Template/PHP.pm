@@ -6,7 +6,7 @@ use PHP 0.15;
 use Mojo::ByteStream;
 use Mojo::Exception;
 use Mojo::Util qw(decode encode monkey_patch slurp url_unescape);
-use constant DEBUG => 
+use constant DEBUG =>   # not used ...
     $ENV{MOJO_TEMPLATE_DEBUG} || $ENV{MOJOX_TEMPLATE_PHP_DEBUG} || 0;
 
 our $VERSION = '0.01';
@@ -475,7 +475,7 @@ EOF
 
 =head1 NAME
 
-MojoX::Template::PHP - PHP templates in Mojolicious applications
+MojoX::Template::PHP - PHP processing engine for MojoX::Plugin::PHP
 
 =head1 VERSION
 
@@ -489,7 +489,7 @@ MojoX::Template::PHP - PHP templates in Mojolicious applications
     <html>
         <head><title>Simple</title><head>
         <body>Time: 
-            <?php ?>
+            <?php echo time(); ?>
         </body>
     </html>
     EOF
