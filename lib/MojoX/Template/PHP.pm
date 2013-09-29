@@ -17,7 +17,6 @@ has encoding => 'UTF-8'; # documented, not used
 has name => 'template.php';
 #has namespace => 'MojoX::Template::PHPSandbox'; # documented, not used
 has template => "";
-has renderer => undef;
 
 sub interpret {
     no strict 'refs';  # let callbacks be fully qualified subroutine names

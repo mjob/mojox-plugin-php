@@ -123,7 +123,6 @@ sub _php {
     return undef unless defined $path;
 
     my $mt = MojoX::Template::PHP->new;
-    $mt->renderer( $renderer );
     my $log = $c->app->log;
     if (defined $inline) {
 	$log->debug('Rendering inline template.');
