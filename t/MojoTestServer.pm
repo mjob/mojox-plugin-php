@@ -36,21 +36,33 @@ sub _var_preprocessor {
 # used in t/10-compute.t
 sub _compute_from_header {
     my ($key, $payload, $c) = @_;
-    return 1 unless $key eq 'X-compute';
-    $payload = eval { Mojo::JSON->new->decode($payload) };
-    if ($@) {
-	PHP::assign_global( 'Perl_compute_result', $@ );
-	return;
-    }
-    my $expr = $payload->{expr};
-    my $output = $payload->{output} // 'Perl_compute_result';
-    my $result = eval $expr;
-    if ($@) {
-	PHP::assign_global( $output, $@ );
-	return;
-    }
-    PHP::assign_global( $output, $result );
-    return 0;  # don't include header with response
+    if ($key eq 'X-compute') {
+	$payload = eval { Mojo::JSON->new->decode($payload) };
+	if ($@) {
+	    PHP::assign_global( 'Perl_compute_result', $@ );
+	    return;
+	}
+	my $expr = $payload->{expr};
+	my $output = $payload->{output} // 'Perl_compute_result';
+	my $result = eval $expr;
+	if ($@) {
+	    PHP::assign_global( $output, $@ );
+	    return;
+	}
+	PHP::assign_global( $output, $result );
+	return 0;
+    } elsif ($key eq 'X-collatz') {
+	# see t/collatz2.php, pod for MojoX::Plugin::PHP
+	$payload = eval { Mojo::JSON->new->decode($payload) };
+	if ($@) {
+	    PHP::assign_global( 'Perl_result', $@ );
+	    return;
+	}
+	my $result = 1 + 3 * $payload->{n};
+	PHP::assign_global( $payload->{result} || 'Perl_result', $result );
+	return 0;
+    } 
+    return 1;
 }
 
 # flexible output postprocessor that can be updated at runtime

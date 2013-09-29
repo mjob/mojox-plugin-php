@@ -134,7 +134,7 @@ sub _php {
 	    my $php_dir = $c->stash('__template_dir') || ".";
 
 	    # XXX - need more consistent way of setting the include path
-	    $c->stash("__php_include_path", 
+	    $c->stash("__php_include_path",
 		      ".:/usr/local/lib/php:$php_dir");
 
 	    pushd($php_dir);
@@ -168,18 +168,62 @@ MojoX::Plugin::PHP - enable PHP templates in your Mojolicious application
 
 0.01
 
+=head1 WTF
+
+Keep reading.
+
 =head1 SYNOPSIS
 
-    # MyApp.pl
+    # MyApp.pl, using Mojolicious
     app->plugin('MojoX::Plugin::PHP');
+    app->plugin('MojoX::Plugin::PHP', {
+        php_var_preprocessor => sub { my $params = shift; ... },
+        php_stderr_preprocessor => sub { my $msg = shift; ... },
+        php_header_processor => sub { my ($field,$value,$repl) = @_; ... },
+        php_output_processor => sub { my ($outref, $headers, $c) = @_; ... }
+    } );
+
+    # using Mojolicious::Lite
+    plugin 'MojoX::Plugin::PHP';
+    plugin 'MojoX::Plugin::PHP', {
+        php_var_preprocessor => sub { my $params = shift; ... },
+        php_stderr_preprocessor => sub { my $msg = shift; ... },
+        php_header_processor => sub { my ($field,$value,$repl) = @_; ... },
+        php_output_processor => sub { my ($outref, $headers, $c) = @_; ... }
+    };
+
+
 
 =head1 DESCRIPTION
 
 L<MojoX::Plugin::PHP> establishes a PHP engine as the default
-handler for C<php> files and templates.
+handler for C<php> files and templates in a Mojolicious application.
+This allows you to put
+a PHP template (say, called C<foo/bar.php> under your Mojolicious
+application's C</templates> or C</public> directory, make a
+request to
 
-[XXX - normal use: request for  /blah/blah.php ]
-[XXX - inline use inside a controller for that nifty php library]
+    /foo/bar.php
+
+and have a PHP interpreter process your file, and Mojolicious
+return a response as if it the request were processed in
+Apache with mod_php.
+
+Why would anyone want to do this? Here are a couple I
+can think of:
+
+=over 4
+
+=item * to put a Mojolicious wrapper around some decent PHP
+application (WordPress?). Then you could use Perl and any
+other state of your Mojolicious application to post process
+output and response headers.
+
+=item * allow PHP developers on your project to keep 
+prototyping in PHP, postponing the religious war about
+which appserver your project should use
+
+=back
 
 =head1 CONFIG
 
@@ -278,20 +322,141 @@ As mentioned in the L<"php_header_processor" documentation in the CONFIG section
 it is possible to use the header callback mechanism to execute
 arbitrary Perl code from PHP and to set up a communication channel
 between your application's PHP scripts and the Perl program running
-your Mojolicious application. Let's demonstrate with a simple example:
+your Mojolicious application. 
 
-   [insert simple example here: Collatz conjecture?]
+Let's demonstrate with a simple example:
+
+The Collatz conjecture states that the following algorithm:
+
+    Take any natural number  n . If  n  is even, divide it by 2.
+    If  n  is odd, multiply it by 3 and add 1 so the result is  3n + 1 .
+    Repeat the process until you reach the number 1.
+
+will always terminate in a finite number of steps.
+
+Suppose we are interested in finding out, for a given numner I<n>,
+how many steps of this algorithm are required to reach the number 1.
+We'll make a request to a path like:
+
+C<collatz.php?n=>I<n>
+
+and return the number of steps in the response. Our C<collatz.php>
+template looks like:
+
+    <?php
+    $nsteps = 0;
+    $n = $_GET['n'];
+    while ($n > 1) {
+        if ($n % 2 == 0) {
+            $n = divide_by_two($n);
+        } else {
+            $n = triple_plus_one($n);
+        }
+        $nsteps++;
+    }
+
+    function divide_by_two($x) {
+        return $x / 2;
+    }
+
+    function triple_plus_one($x) {
+        ...
+    }
+    ?>
+    number of Collatz steps is <?php echo $nsteps; ?>
+
+and we will implement the C<triple_plus_one> function in Perl.
+
+=head2 Components of the communication channel
+
+The configuration for C<MojoX::Plugin::PHP> can specify a callback
+function that will be invoked when PHP sends a response header.
+To use this channel to perform work in PHP, we need
+
+=over 4
+
+=item 1. a C<MojoX::Plugin::PHP> header callback function that
+listens for a specific header
+
+=item 2. PHP code to send that header
+
+=item 3. an agreed upon global PHP variable, that Perl code
+can set (with L<< the C<PHP::assign_global> function|"assign_global"/PHP >>)
+with the result of its operation, and that PHP can read
+
+=back
+
+=head2 Perl code
+
+In the Mojolicious application, we intercept a header of the form
+C<< X-collatz: >>I<payload>  where I<payload> is the JSON-encoding
+of a hash that defines C<n>, the number to operate on, and
+C<result>, the name of the PHP variable to publish the results to.
+
+JSON-encoding the header value is a convenient way to pass
+complicated, arbitrary data from PHP to Perl, including binary
+data or strings with newlines. For complex results, it is also
+convenient to assign a JSON-encoded value to a single PHP global
+variable.
+
+    ...
+    use Mojo::JSON;
+    ...
+    app->plugin('MojoX::Plugin::PHP',
+        { php_header_processor => \&my_header_processor };
+
+    sub my_header_processor {
+        my ($field,$value,$replace) = @_;
+        if ($field eq 'X-collatz') {
+            my $payload = Mojo::JSON->new->decode($value);
+            my $n = $payload->{n};
+	    my $result_var = $payload->{result};
+            $n = 3 * $n + 1;
+	    PHP::assign_global( $result_var, $n );
+            return 0;   # don't include this header in response
+        }
+        return 1;       # do include this header in response
+    }
+    ...
+
+=head2 PHP code
+
+The PHP code merely has to set a response header that looks like
+C<< X-collatz: >>I<payload>  where I<payload> is a JSON-encoded
+associative array with the number to operate on the variable to
+receive the results in. Then it must read the result out of that
+variable.
+
+    ...
+    function triple_plus_one($x) {
+        global $collatz_result;
+        $payload = encode_json(   // requires php >=v5.2.0
+            array( "n" => $x, "result" => "collatz_result")
+        );
+        header("X-collatz: $payload");
+        return $collatz_result;
+    }
+
+Now we can not only run PHP scripts in Mojolicious, our PHP
+templates can execute code in Perl. 
+
+    $ perl our_app.pl get /collatz.php?n=5
+    number of Collatz steps is 5
+    $ perl our_app.pl get /collatz.php?n=42
+    number of Collatz steps is 8
+
+=head2 Other possible uses
 
 Other ways you might use this feature include:
 
 =over 4
 
-=item have PHP execute functions or use modules that are hard to
+=item * have PHP execute functions or use modules that are hard to
 implement in Perl or only available in Perl
 
-=item have PHP manipulate data in your app's Perl model
+=item * have PHP manipulate data in your app's Perl model
 
-=item perform authentication or other function in PHP that changes
+=item * perform authentication or other function in PHP that changes
 the state on the Perl side of your application
 
 =back

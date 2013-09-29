@@ -211,3 +211,22 @@ Or maybe I want to name it  Mojolicious::Plugin::PHP ? There are
 currently no  MojoX::Plugin::xxx  modules that I'm aware of.
 
 UTF-8 issue?
+
+how about another config:  use_index_php => true | false | undef
+if false, do not search for  index.php  file in each request.
+if undef, search for  index.php  when request ends in  /  (this can
+be the default behavior)
+
+is there a better way to reroute for a php template
+than setting up 10 different routes starting with /php-handler-XXXXX/ ?
+We need to set up 10 (or more) different routes because a
+*template_XXXXX parameter can only hold a single directory ?
+Instead, what if we reroute just to a simple '/php-handler-XXXXXXX'
+route and save the template name in the stash?
+
+     $old_path = $c->req->url->path->to_string;
+     $c->req->{__php_restore} = { path=>$old_path, template=>$template }
+     $c->req->url->path( $php_request_handler );
+
+     # in _php_controller:
+     

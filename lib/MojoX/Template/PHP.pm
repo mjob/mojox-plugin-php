@@ -481,10 +481,6 @@ MojoX::Template::PHP - Use PHP as templating system in Mojolicious
 
 0.01
 
-=head1 WTF
-
-Keep reading.
-
 =head1 SYNOPSIS
 
     use MojoX::Template::PHP;
