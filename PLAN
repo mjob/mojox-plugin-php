@@ -234,26 +234,3 @@ route and save the template name in the stash?
      $c->req->url->path( $c->req->{__php_restore}{path} );
      $mt->template( $c->req->{__php_restore}{template} );
 
-What is the deal with encoding? 
-
-     Mojolicious::Renderer  and  Mojo::Template  have  encoding  members.
-     The  Mojolicious::Renderer::render  method 
-        * sets  encoding  in the  $options  variable
-        * if there's a  data , text , or  json  stash var, then ignore encoding
-        * call $self->_render_template($c,\$output,$options), populates $output
-        * $output = encode $options->{encoding}, $output
-
-     What do they do?
-
-Input: /enc/hello_utf8.php and /enc/hello_latin1.php
-0000100   X   i   n       c   h 303 240   o       t   h 341 272 277    
-0000120   g   i 341 273 233   i
-
-/enc/hello_utf8.php output:
-0000000   X   i   n       c   h 303 240   o       t   h 341 272 277    
-0000020   g   i 341 273 233   i
-
-/enc/hello_latin1.php output:
-0000000   X   i   n       c   h 303 203 302 240   o       t   h 303 241
-0000020 302 272 302 277       g   i 303 241 302 273 302 233   i
-
