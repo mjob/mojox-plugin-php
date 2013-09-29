@@ -13,7 +13,7 @@ our $VERSION = '0.01';
 
 #has [qw(auto_escape)];
 has [qw(code include_file)] => '';
-#has encoding => 'UTF-8'; # documented, not used
+has encoding => 'UTF-8'; # documented, not used
 has name => 'template.php';
 #has namespace => 'MojoX::Template::PHPSandbox'; # documented, not used
 has template => "";
@@ -527,14 +527,12 @@ Inline PHP code for template. The L<"interpret"> method
 will check the L<"include_file"> attribute first, and then
 this attribute to decide what to pass to the PHP interpreter.
 
-=cut
+=head2 encoding
 
-#=head2 encoding
-#
-#    my $encoding = $mt->encoding;
-#    $mt = $mt->encoding( $charset );
-#
-#Encoding used for template files.
+    my $encoding = $mt->encoding;
+    $mt = $mt->encoding( $charset );
+
+Encoding used for template files.
 
 =head2 include_file
 

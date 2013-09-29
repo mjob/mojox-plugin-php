@@ -176,6 +176,8 @@ how does PHP determine the "name" of an upload? We are adding a
 "name" header but that's not what a file upload will look like in
 the wild.
 
+    Yeah, file uploads in the wild don't really work.
+
 What does PHP do with a parameter name like  foo[][4] ?
 
 Do we have to apply  _php_method_params  to  $params->{_FILES}  too ?
