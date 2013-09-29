@@ -17,6 +17,7 @@ has encoding => 'UTF-8'; # documented, not used
 has name => 'template.php';
 #has namespace => 'MojoX::Template::PHPSandbox'; # documented, not used
 has template => "";
+has renderer => undef;
 
 sub interpret {
     no strict 'refs';  # let callbacks be fully qualified subroutine names
@@ -137,19 +138,6 @@ sub interpret {
 	    $log->info("executing $len bytes of code in PHP engine");
 	}
 	eval { PHP::eval( "?>" . $self->code ); };
-    }
-
-    # what is the encoding of output ?
-    my $content_type = $c->res->headers->content_type || "";
-    if ($content_type) {
-	if ($content_type =~ /charset=.?utf-?8/i) {
-	    # Isn't Mojo just going to encode it again
-	    $OUTPUT = decode("UTF-8", $OUTPUT);
-	} elsif ($content_type =~ /charset=["'](.*?)["']/) {
-	    $OUTPUT = decode($1, $OUTPUT);
-	} elsif ($content_type =~ /charset=(\S+?)/) {
-	    $OUTPUT = decode($1, $OUTPUT);
-	}
     }
 
     if ($@) {

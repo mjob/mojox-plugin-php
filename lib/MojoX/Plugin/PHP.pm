@@ -113,6 +113,9 @@ sub _template_name {
 sub _php {
     my ($renderer, $c, $output, $options) = @_;
 
+    # the PHP script should declare its own encoding in a Content-type header
+    delete $options->{encoding};
+
     my $inline = $options->{inline};
     my $path = _template_path($renderer, $c, $options);
 
@@ -120,6 +123,7 @@ sub _php {
     return undef unless defined $path;
 
     my $mt = MojoX::Template::PHP->new;
+    $mt->renderer( $renderer );
     my $log = $c->app->log;
     if (defined $inline) {
 	$log->debug('Rendering inline template.');
