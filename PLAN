@@ -212,7 +212,10 @@ MojoX::PHP::Plugin and MojoX::PHP::Template?
 Or maybe I want to name it  Mojolicious::Plugin::PHP ? There are 
 currently no  MojoX::Plugin::xxx  modules that I'm aware of.
 
-UTF-8 issue?
+
+0.02
+
+Fix file uploads
 
 how about another config:  use_index_php => true | false | undef
 if false, do not search for  index.php  file in each request.

@@ -8,6 +8,8 @@ use Mojo::Exception;
 use Mojo::Util qw(decode encode monkey_patch slurp url_unescape);
 use constant DEBUG =>   # not used ...
     $ENV{MOJO_TEMPLATE_DEBUG} || $ENV{MOJOX_TEMPLATE_PHP_DEBUG} || 0;
+use Data::Dumper;
+$Data::Dumper::Indent = $Data::Dumper::Sortkeys = 1;
 
 our $VERSION = '0.01';
 
@@ -30,6 +32,11 @@ sub interpret {
     };
 
     PHP::__reset;
+
+    if (DEBUG) {
+	$log->debug( "Controller: ", Dumper($c) );
+	$log->debug(" Request: ", Dumper($c->req) );
+    }
 
     # XXX - are there any request headers that DON'T affect the
     #       superglobals but DO change the behavior of PHP?
