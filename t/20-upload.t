@@ -26,7 +26,8 @@ ok( $content =~ /\bmy_file\b/, 'content got correct file upload param name' );
 #   Content => [ PARAMNAME => [ FILENAME, UPLOADNAME, "Content-type"=>CTYPE ] ]
 # and  $_FILES[PARAMNAME]['name'] is set to  UPLOADNAME
 #   
-ok( $content =~ /\bname\b.*test_file_name/, 'file upload recorded filename' );
+#ok( $content =~ /\bname\b.*test_file_name/, 'file upload recorded filename' );
+ok( $content =~ /\bname\b.*testapp.conf/, 'file upload recorded filename' );
 
 ok( $content =~ /\bsize\b\D*(\d+)/ && $1 == $size,
     'file upload recorded correct file size' );
@@ -74,8 +75,11 @@ ok( $content,  'got content for POST with file upload' );
 ok( $content =~ /\$_FILES =/, 'content looks like correct format' );
 ok( $content =~ /\bmy_file1\b/, 'content got correct 1st file upload param name' );
 ok( $content =~ /\bmy_file2\b/, 'content got correct 2nd file upload param name' );
-ok( $content =~ /my_file1.*\bname\b\W*test_file_namex/s, 'file upload recorded filename1' );
-ok( $content =~ /my_file2.*\bname\b\W*manifest/s, 'file upload recorded filename2' );
+
+#ok( $content =~ /my_file1.*\bname\b\W*test_file_namex/s, 'file upload recorded filename1' );
+ok( $content =~ /my_file1.*\bname\b\W*testapp.conf/s, 'file upload recorded filename1' );
+ok( $content =~ /my_file2.*\bname\b\W*manifest/si, 'file upload recorded filename2' );
+
 ok( $content =~ /size\D*$size\b/,
     'file upload recorded correct file1 size' );
 ok( $content =~ /size\D*$size2\b/,

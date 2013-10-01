@@ -34,7 +34,6 @@ sub interpret {
     PHP::__reset;
 
     if (DEBUG) {
-	$log->debug( "Controller: ", Dumper($c) );
 	$log->debug(" Request: ", Dumper($c->req) );
     }
 
@@ -76,6 +75,15 @@ sub interpret {
     # hook to make adjustments to  %$params
     if ($callbacks && $callbacks->{php_var_preprocessor}) {
 	$callbacks->{php_var_preprocessor}->($params);
+    }
+
+    if (DEBUG) {
+	$log->debug("Super globals: "
+		    . Data::Dumper::Dumper({_GET => $params->{_GET},
+					    _POST => $params->{_POST},
+					    _REQUEST => $params->{_REQUEST},
+					    _FILES => $params->{_FILES},
+					    _SERVER => $params->{_SERVER} }));
     }
 
     while (my ($param_name, $param_value) = each %$params) {
@@ -127,20 +135,23 @@ sub interpret {
 
     if (my $ipath = $c->stash("__php_include_path")) {
 	PHP::set_include_path( $ipath );
-	$log->info("include path: $ipath");
+	$log->info("include path: $ipath") if DEBUG;
     }
 
     if ($self->include_file) {
-	$log->info("executing " . $self->include_file
-			   . " in PHP engine");
+	if (DEBUG) {
+	    $log->info("executing " . $self->include_file . " in PHP engine");
+	}
 	eval { PHP::include( $self->include_file ) };
     } else {
 	my $len = length($self->code);
-	if ($len < 1000) {
-	    $log->info("executing code:\n\n" . $self->code
-			       . "\nin PHP engine");
-	} else {
-	    $log->info("executing $len bytes of code in PHP engine");
+	if (DEBUG) {
+	    if ($len < 1000) {
+		$log->info("executing code:\n\n" . $self->code
+			   . "\nin PHP engine");
+	    } else {
+		$log->info("executing $len bytes of code in PHP engine");
+	    }
 	}
 	eval { PHP::eval( "?>" . $self->code ); };
     }
@@ -203,9 +214,76 @@ sub interpret {
     return Mojo::Exception->new( $@, [$self->template, $self->code] );
 }
 
+sub _get_upload_metadata {
+    my ($self, $upload) = @_;
+
+    my ($temp_fh, $tempname) = File::Temp::tempfile( UNLINK => 1 );
+    print $temp_fh $upload->slurp;
+    close $temp_fh;
+    PHP::_spoof_rfc1867( $tempname || "" );
+
+    return {
+	name => $upload->name,
+	type => $upload->headers->content_type,
+	size => $upload->size,
+	filename => $upload->filename,
+	tmp_name => $tempname,
+	error => 0
+    };
+}
+
 sub _files_params {
     my ($self, $c) = @_;
     my $_files = {};
+    my $uploads = $c->req->uploads;
+
+    if ($uploads) {
+
+	foreach my $upload (@$uploads) {
+
+	    DEBUG && $c->app->log->debug("\n--------\nUPLOAD:\n---------\n"
+			    . Data::Dumper::Dumper($upload)
+			    . "\n-------------------\n");
+
+	    my $metadata = $self->_get_upload_metadata($upload);
+	    if ($metadata->{name} =~ s/\[\]//) {
+		my $name = $metadata->{name};
+		$metadata->{name} = $metadata->{filename};
+		if ($_files->{$name} && !ref $_files->{$name}) {
+		    # upload of foo[] overwrites upload of foo
+		    delete $_files->{$name};
+		}
+		for my $attrib (qw(name size type tmp_name error)) {
+		    push @{$_files->{$name}{$attrib}},
+			    $metadata->{$attrib};
+		}
+	    } elsif ($metadata->{name} =~ s/\[(.*?)\]//) {
+		# XXX -- need test in t/20-uploads.t for this branch
+		my $index = $1;
+		my $name = $metadata->{name};
+		$metadata->{name} = delete $metadata->{filename};
+		$_files->{$name}{$index} = $metadata;
+	    } else {
+		my $name = $metadata->{name};
+		$metadata->{name} = delete $metadata->{filename};
+		$_files->{$name} = $metadata;
+	    }
+	}
+#	$_files = _files_params_000($self, $c);
+    }
+    if (DEBUG && keys %$_files) {
+	$c->app->log->debug("\$_FILES => " . Data::Dumper::Dumper($_files));
+    }
+    return $_files;
+}
+
+
+sub _files_params_000 {
+    my ($self, $c) = @_;
+    my $_files = {};
+
+    DEBUG && $c->app->log->info(" request keys: "
+		       . Data::Dumper::Dumper( [keys %{$c->req}] ));
 
     # Find all parameters whose values are Mojo::Upload?
     # XXX - what if there is an array of files using the same 'foo[]' key?
@@ -215,9 +293,14 @@ sub _files_params {
 	    foreach my $upload ($c->param($key)) {
 		next unless ref $upload eq 'Mojo::Upload';
 
+		DEBUG && $c->app->log->info("\n\n--------------------------------------------------\n\nTHERE IS AN UPLOAD IN PARAMETER $key\n" . 
+		      Data::Dumper::Dumper($upload) .
+		      "\n\n-------------------------------------------");
+
+
 		# do we have to make our own temp file? ok.
 		use File::Temp;
-		my ($temp_fh,$tmpname) = File::Temp::tempfile(UNLINK => 1);
+		my ($temp_fh,$tmpname) = File::Temp::tempfile(UNLINK => 0);
 		close $temp_fh;
 		$upload->move_to($tmpname);
 
@@ -226,7 +309,7 @@ sub _files_params {
 
 		push @{$_files->{$key}{name}}, $name || $upload->name;
 		push @{$_files->{$key}{size}}, $upload->size;
-		push @{$_files->{$key}{error}}, 0;
+		push @{$_files->{$key}{error}}, undef;
 		push @{$_files->{$key}{type}}, $upload->headers->content_type;
 		push @{$_files->{$key}{tmp_name}}, $tmpname;
 		PHP::_spoof_rfc1867( $tmpname || "" );
@@ -234,6 +317,10 @@ sub _files_params {
 	} else {
 	    foreach my $upload ($c->param($key)) {
 		next unless ref $upload eq 'Mojo::Upload';
+
+		DEBUG && $c->app->log->info("\n\n--------------------------------------------------\n\nTHERE IS AN UPLOAD IN PARAMETER $key\n" . 
+		      Data::Dumper::Dumper($upload) .
+		      "\n\n-------------------------------------------");
 
 		# do we have to make our own temp file? ok.
 		use File::Temp;
@@ -245,13 +332,16 @@ sub _files_params {
 		    name => scalar($upload->headers->header("name"))
 			|| $upload->name,
 			size => $upload->size,
-			error => 0,
+#			error => 0,
 			type => scalar $upload->headers->content_type ,
 			tmp_name => $tmpname,
 		};
 		PHP::_spoof_rfc1867( $_files->{$key}{tmp_name} || "" );
 	    }
 	}
+    }
+    if (DEBUG && keys %$_files) {
+	$c->app->log->info(" _FILES data =>\n" . Data::Dumper::Dumper($_files));
     }
     return $_files;
 }
