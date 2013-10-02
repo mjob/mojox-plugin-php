@@ -6,6 +6,7 @@ use PHP 0.15;
 use Mojo::ByteStream;
 use Mojo::Exception;
 use Mojo::Util qw(decode encode monkey_patch slurp url_unescape);
+use File::Temp;
 use constant DEBUG =>   # not used ...
     $ENV{MOJO_TEMPLATE_DEBUG} || $ENV{MOJOX_TEMPLATE_PHP_DEBUG} || 0;
 use Data::Dumper;
@@ -36,11 +37,6 @@ sub interpret {
     if (DEBUG) {
 	$log->debug(" Request: ", Dumper($c->req) );
     }
-
-    # XXX - are there any request headers that DON'T affect the
-    #       superglobals but DO change the behavior of PHP?
-    #       How do we pass the request headers to PHP? 
-    #       Do they go in the $_REQUEST variable??
 
     my $callbacks = $c && $c->app->config->{'MojoX::Template::PHP'};
     $callbacks ||= {};
@@ -78,7 +74,7 @@ sub interpret {
     }
 
     if (DEBUG) {
-	$log->debug("Super globals: "
+	$log->debug("Super globals for request " . $self->include_file . ":"
 		    . Data::Dumper::Dumper({_GET => $params->{_GET},
 					    _POST => $params->{_POST},
 					    _REQUEST => $params->{_REQUEST},
@@ -277,75 +273,6 @@ sub _files_params {
     return $_files;
 }
 
-
-sub _files_params_000 {
-    my ($self, $c) = @_;
-    my $_files = {};
-
-    DEBUG && $c->app->log->info(" request keys: "
-		       . Data::Dumper::Dumper( [keys %{$c->req}] ));
-
-    # Find all parameters whose values are Mojo::Upload?
-    # XXX - what if there is an array of files using the same 'foo[]' key?
-    foreach my $key ($c->param) {
-	if ($key =~ /\[\]/) {
-	    # what do multiple uploads on the same key look like?
-	    foreach my $upload ($c->param($key)) {
-		next unless ref $upload eq 'Mojo::Upload';
-
-		DEBUG && $c->app->log->info("\n\n--------------------------------------------------\n\nTHERE IS AN UPLOAD IN PARAMETER $key\n" . 
-		      Data::Dumper::Dumper($upload) .
-		      "\n\n-------------------------------------------");
-
-
-		# do we have to make our own temp file? ok.
-		use File::Temp;
-		my ($temp_fh,$tmpname) = File::Temp::tempfile(UNLINK => 0);
-		close $temp_fh;
-		$upload->move_to($tmpname);
-
-		my $name = scalar($upload->headers->header('name'));
-		$key =~ s/\[\]//;
-
-		push @{$_files->{$key}{name}}, $name || $upload->name;
-		push @{$_files->{$key}{size}}, $upload->size;
-		push @{$_files->{$key}{error}}, undef;
-		push @{$_files->{$key}{type}}, $upload->headers->content_type;
-		push @{$_files->{$key}{tmp_name}}, $tmpname;
-		PHP::_spoof_rfc1867( $tmpname || "" );
-	    }
-	} else {
-	    foreach my $upload ($c->param($key)) {
-		next unless ref $upload eq 'Mojo::Upload';
-
-		DEBUG && $c->app->log->info("\n\n--------------------------------------------------\n\nTHERE IS AN UPLOAD IN PARAMETER $key\n" . 
-		      Data::Dumper::Dumper($upload) .
-		      "\n\n-------------------------------------------");
-
-		# do we have to make our own temp file? ok.
-		use File::Temp;
-		my ($temp_fh,$tmpname) = File::Temp::tempfile(UNLINK => 1);
-		close $temp_fh;
-		$upload->move_to($tmpname);
-
-		$_files->{$key} = {
-		    name => scalar($upload->headers->header("name"))
-			|| $upload->name,
-			size => $upload->size,
-#			error => 0,
-			type => scalar $upload->headers->content_type ,
-			tmp_name => $tmpname,
-		};
-		PHP::_spoof_rfc1867( $_files->{$key}{tmp_name} || "" );
-	    }
-	}
-    }
-    if (DEBUG && keys %$_files) {
-	$c->app->log->info(" _FILES data =>\n" . Data::Dumper::Dumper($_files));
-    }
-    return $_files;
-}
-
 sub _cookie_params {
     my ($self, $c) = @_;
     if (@{$c->req->cookies}) {
@@ -369,8 +296,6 @@ sub _server_params {
     my $req = $c->req;
     my $headers = $req->headers;
 
-
-
     # see  Mojolicious::Plugin::CGI
     return {
 	CONTENT_LENGTH => $headers->content_length || 0,
@@ -387,7 +312,7 @@ sub _server_params {
 	REMOTE_HOST => gethostbyaddr( inet_aton( $tx->remote_address ), AF_INET ) || '',
 	REMOTE_PORT => $tx->remote_port,
 	REQUEST_METHOD => $req->method,
-	REQUEST_URI => $req->url->path->to_string,
+	REQUEST_URI => $req->url->to_string,
 	SERVER_NAME => hostname,
 	SERVER_PORT => $tx->local_port,
 	SERVER_PROTOCOL => $req->is_secure ? 'HTTPS' : 'HTTP',
