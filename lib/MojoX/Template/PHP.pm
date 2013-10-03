@@ -398,7 +398,6 @@ sub _mojoparams_to_phpparams {
 	    }
 	}
     }
-    delete $new_params->{ MojoX::Plugin::PHP->_php_template_pname };
     return $new_params;
 }
 
