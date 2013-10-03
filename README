@@ -1,8 +1,8 @@
 MojoX-Plugin-PHP 0.01
 =====================
 
-A Mojolicious plugin that will allow you to use PHP as a templating
-system for your web application. 
+A plugin for using PHP as a templating system for your
+Mojolicious web application.
 
 Let's suppose you have some php files  foo.php  and  bar/baz.php
 that do something useful for you. To use them within your Mojolicious
@@ -23,7 +23,7 @@ FEATURES
   as global variables.
 
 * Possible to preprocess PHP program inputs ($_GET, $_SERVER, 
-  the stash variables, etc.) before the PHP processing begins.
+  the stash variables, etc.) before PHP processing begins.
 
 * Possible to postprocess the PHP output and response headers
   before delivering the response from Mojolicious.
@@ -42,7 +42,8 @@ which is a Perl module (available on CPAN) for using a PHP
 interpreter from Perl. PHP (i.e., the Perl module called PHP)
 in turn depends on a PHP installation built with the embedded
 SAPI library (say, built from source after running
-./configure --enable-embed ... )
+./configure --enable-embed ... )  The PHP module is availble
+from CPAN or from github at https://github.com/dk/p5-php .
  
 INSTALLATION
 

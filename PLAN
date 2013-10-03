@@ -215,25 +215,6 @@ currently no  MojoX::Plugin::xxx  modules that I'm aware of.
 
 0.02
 
-Fix file uploads
-
-     Request contains:
-
-        $req->{content}{parts}[0]{asset}{content}  is the content of the upload
-        $req->{content}{party}[0]{headers}{headers}{"content-disposition"}
-		=> 'form-data; name="import"; filename="glory_hole1.jpg"'
-        $req->{content}{parts}[0]{headers}{headers}{"content-type"}
-		=> 'image/jpeg'
-
-        $req->{uploads}{import}[0]{
-		asset => ... file contents ...
-		filename => glory_hole1.jpg
-		headers => ... headers ...
-		name => import
-
-
-
-
         body_params => Mojo::Parameters(actopn=>...,_wpnonce-custom-header-upload=>...,_wp_http_referer=>...,submit=>...)
 	content => headers => ...
         parts => asset => Mojo::Asset::Memory(content => .....)
