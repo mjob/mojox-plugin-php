@@ -8,7 +8,7 @@ use Data::Dumper;
 $Data::Dumper::Indent = 1;
 $Data::Dumper::Sortkeys = 1;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 my $php_req_handler_path = sprintf "/php-handler-%07x", 0x10000000 * rand();
 my $php_template_pname = sprintf "template_%07x", 0x10000000 * rand();
 
@@ -170,7 +170,7 @@ Mojolicious application!
 
 =head1 VERSION
 
-0.01
+0.02
 
 =head1 WTF
 

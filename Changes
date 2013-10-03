@@ -1,7 +1,9 @@
 Revision history for MojoX-Plugin-PHP
 
-0.01	2013-09-29
+0.01	2013-10-02
 	Initial release. A lot of features implemented and tested
 	already because a lot of code and ideas were borrowed from
 	more mature Catalyst-View-Template-PHP distribution.
 
+0.02	2013-10-03
+	The next exciting thing to happen to MojoX-Plugin-PHP
