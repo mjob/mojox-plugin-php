@@ -32,3 +32,38 @@ push @{app->static->paths}, $WordPress::Home;
 
 app->secret('wordpress on mojolicious, bitches');
 app->start;
+
+=head1 NAME
+
+wp-on-mojo.pl - WordPress on Mojolicious (bitches)
+
+=head1 INSTRUCTIONS
+
+=over 4
+
+=item 0. Install the L<MojoX::Plugin::PHP> module on your 
+
+=item 1. If you already have a working WordPress installation on your
+host, skip ahead to step 3. Otherwise download and unpack some version
+of WordPress from L<http://wordpress.org/>
+
+=item 2. Configure a C<wp-config.php> file with database settings,
+authentication keys, etc.
+
+=item 3. Change the C<$WordPress::Home> variable near the top of
+this script (line 8) to the root directory of your WordPress
+installation.
+
+=item 4. Launch the Mojolicious web app with
+
+    morbo examples/wp-on-mojo.pl
+
+or
+
+    hypnotoad examples/wp-on-mojo.pl
+
+=item 5. Blog with Mojolicious and WordPress like a boss.
+
+=back
+
+=cut

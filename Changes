@@ -6,4 +6,4 @@ Revision history for MojoX-Plugin-PHP
 	more mature Catalyst-View-Template-PHP distribution.
 
 0.02	2013-10-03
-	The next exciting thing to happen to MojoX-Plugin-PHP
+	Refactored path rewrite rules and simplified routing 
