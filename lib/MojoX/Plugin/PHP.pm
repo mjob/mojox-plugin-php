@@ -10,15 +10,11 @@ $Data::Dumper::Sortkeys = 1;
 
 our $VERSION = '0.02';
 my $php_req_handler_path = sprintf "/php-handler-%07x", 0x10000000 * rand();
-#my $php_template_pname = sprintf "template_%07x", 0x10000000 * rand();
-#
-#sub _php_template_pname { return $php_template_pname; }
-#sub _php_req_handler_path { return $php_req_handler_path; }
 
 sub register {
     my ($self, $app, $config) = @_;
-
-    $app->config( 'MojoX::Template::PHP' => $config );
+    $app->config( 'MojoX::Template::PHP' => $config,
+		  'MojoX::Plugin::PHP'   => $config );
     $app->types->type( php => "application/x-php" );
     $app->renderer->add_handler( php => \&_php );
     $app->routes->any( $php_req_handler_path, \&_php_controller );
@@ -48,15 +44,20 @@ sub _path_contains_index_php {
 sub _before_dispatch_hook {
     my $c = shift;
     my $old_path = $c->req->url->path->to_string;
+$DB::single
+ =1;
     if ($old_path =~ /\.php$/) {
 	_rewrite_req_for_php_handler( $c, $old_path, substr($old_path,1) );
-    } elsif ($old_path =~ m{/$}) {
-	if (_path_contains_index_php($old_path, $c)) {
-	    _rewrite_req_for_php_handler($c, $old_path, 
-					 substr($old_path,1).'index.php');
-	}
     } else {
-	if (_path_contains_index_php($old_path, $c)) {
+	my $use_index_php =
+	    $c->app->config->{'MojoX::Plugin::PHP'}{use_index_php};
+	if ($old_path =~ m{/$}) {
+	    if (defined $use_index_php && 
+		    _path_contains_index_php($old_path,$c)) {
+		_rewrite_req_for_php_handler($c, $old_path, 
+					     substr($old_path,1).'index.php');
+	    }
+	} elsif ($use_index_php && _path_contains_index_php($old_path,$c)) {
 	    _rewrite_req_for_php_handler($c,$old_path,
 					 substr($old_path,1).'/index.php');
 	}
@@ -215,6 +216,33 @@ which appserver your project should use
 =back
 
 =head1 CONFIG
+
+=over 4
+
+=item use_index_php
+
+    use_index_php => boolean | undef
+
+Describes how the before_dispatch hook should handle requests
+for a path that contains a file called C<index.php>. 
+
+If C<use_index_php> is set to a defined value, then a request like
+C</foo/> (with a trailing slash) will be routed to
+C</foo/index.php> if C</foo/index.php> would resolve to a valid
+PHP template.
+
+If C<use_index_php> is set to a true value, then a request like
+C</foo> (with or without a trailing slash) will be routed to
+C</foo/index.php> if C</foo/index.php> would resolve to a valid
+PHP template.
+
+If C<use_index_php> is not defined or set to C<undef>, then
+this module will not look for an C<index.php> file related
+to any request.
+
+=back
+
+=head2 Callbacks during PHP processing
 
 There are four hooks in the PHP template processing engine
 (L<MojoX::Template::PHP>) where you can customize or extend 

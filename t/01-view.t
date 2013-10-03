@@ -34,9 +34,27 @@ ok( $phpinfo_content =~ /_SERVER/ && $phpinfo_content =~ /_ENV/,
 # if /foo/index.php is accessible. Otherwise, they should 404
 # or drop through to whatever route they were going to take.
 
+# test  {use_index_php}  config
+
+$t->app->config->{'MojoX::Plugin::PHP'}{use_index_php} = 1;
+
 $t->get_ok('/dir-b')->status_is(200)->content_like(qr/hello world/i);
 $t->get_ok('/dir-b/')->status_is(200)->content_like(qr/hello world/i);
-
 $t->get_ok('/dir-a')->status_is(404);
 $t->get_ok('/dir-a/')->status_is(404);
+
+$t->app->config->{'MojoX::Plugin::PHP'}{use_index_php} = 0;
+
+$t->get_ok('/dir-b')->status_is(404); # 200)->content_like(qr/hello world/i);
+$t->get_ok('/dir-b/')->status_is(200)->content_like(qr/hello world/i);
+$t->get_ok('/dir-a')->status_is(404);
+$t->get_ok('/dir-a/')->status_is(404);
+
+delete $t->app->config->{'MojoX::Plugin::PHP'}{use_index_php};
+
+$t->get_ok('/dir-b')->status_is(404);
+$t->get_ok('/dir-b/')->status_is(404);
+$t->get_ok('/dir-a')->status_is(404);
+$t->get_ok('/dir-a/')->status_is(404);
+
 done_testing();
