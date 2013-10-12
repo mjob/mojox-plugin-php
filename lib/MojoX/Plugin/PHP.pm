@@ -151,8 +151,7 @@ sub _php {
 
 =head1 NAME
 
-MojoX::Plugin::PHP - use PHP as a templating system in your
-Mojolicious application!
+MojoX::Plugin::PHP - use PHP as a templating system in Mojolicious
 
 =head1 VERSION
 
