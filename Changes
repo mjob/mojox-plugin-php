@@ -5,6 +5,6 @@ Revision history for MojoX-Plugin-PHP
 	already because a lot of code and ideas were borrowed from
 	more mature Catalyst-View-Template-PHP distribution.
 
-0.02	2013-10-03
+0.02	2013-11-02
 	Refactored path rewrite rules and simplified routing.
 	Implement use_index_php config parameter
