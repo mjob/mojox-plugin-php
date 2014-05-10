@@ -8,7 +8,7 @@ use Data::Dumper;
 $Data::Dumper::Indent = 1;
 $Data::Dumper::Sortkeys = 1;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 my $php_req_handler_path = sprintf "/php-handler-%07x", 0x10000000 * rand();
 
 sub register {
@@ -152,7 +152,7 @@ MojoX::Plugin::PHP - use PHP as a templating system in Mojolicious
 
 =head1 VERSION
 
-0.03
+0.04
 
 =head1 WTF
 
@@ -485,7 +485,7 @@ Marty O'Brien E<lt>mob@cpan.orgE<gt>
 
 =head1 COPYRIGHT
 
-Copyright 2013, Marty O'Brien. All rights reserved.
+Copyright 2013-2014, Marty O'Brien. All rights reserved.
 
 This library is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published

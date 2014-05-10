@@ -13,7 +13,7 @@ use constant DEBUG =>   # not used ...
 use Data::Dumper;
 $Data::Dumper::Indent = $Data::Dumper::Sortkeys = 1;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 #has [qw(auto_escape)];
 has [qw(code include_file)] => '';
@@ -488,7 +488,7 @@ MojoX::Template::PHP - PHP processing engine for MojoX::Plugin::PHP
 
 =head1 VERSION
 
-0.03
+0.04
 
 =head1 SYNOPSIS
 
@@ -615,7 +615,7 @@ Marty O'Brien E<lt>mob@cpan.orgE<gt>
 
 =head1 COPYRIGHT
 
-Copyright 2013, Marty O'Brien. All rights reserved.
+Copyright 2013-2014, Marty O'Brien. All rights reserved.
 
 This library is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published
