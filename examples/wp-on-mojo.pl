@@ -10,7 +10,6 @@ $WordPress::Home = $ARGV[0] || ".../wordpress";
 plugin 'MojoX::Plugin::PHP', {
     use_index_php => 1,
     php_var_preprocessor => sub {
-	$DB::single = 1;
 	$_[0]->{_SERVER}{BITCHES} = "Yeah, WordPress on Mojolicious, bitches!";
 	PHP::call('set_include_path', $WordPress::Home);
     },
