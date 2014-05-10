@@ -44,8 +44,6 @@ sub _path_contains_index_php {
 sub _before_dispatch_hook {
     my $c = shift;
     my $old_path = $c->req->url->path->to_string;
-$DB::single
- =1;
     if ($old_path =~ /\.php$/) {
 	_rewrite_req_for_php_handler( $c, $old_path, substr($old_path,1) );
     } else {
@@ -141,7 +139,6 @@ sub _php {
 	    return undef;
 	}
     }
-
     return ref $$output ? die $$output : 1;
 }
 

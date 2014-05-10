@@ -20,8 +20,8 @@ plugin 'MojoX::Plugin::PHP', {
 	$headers->header("X-wordpress-on-mojolicious", "That's right bitches");
     },
     php_header_processor => sub {
-	my ($key, $val, $replace) = @_;
-	app->log->debug("Header from WordPress: \t$key => $val");
+	$_[1] //= ""; # value
+	app->log->debug("Header from WordPress: \t$_[0] => $_[1]");
 	return 1;
     }
 };

@@ -9,6 +9,7 @@ use Mojo::Util qw(decode encode monkey_patch slurp url_unescape);
 use File::Temp;
 use constant DEBUG =>   # not used ...
     $ENV{MOJO_TEMPLATE_DEBUG} || $ENV{MOJOX_TEMPLATE_PHP_DEBUG} || 0;
+
 use Data::Dumper;
 $Data::Dumper::Indent = $Data::Dumper::Sortkeys = 1;
 
@@ -154,13 +155,13 @@ sub interpret {
 
     if ($@) {
 	if (length($OUTPUT || "") < 1000 || DEBUG) {
-	    $log->error("Output from PHP engine:\n\t\t-------------------");
-	    $log->error( $OUTPUT || "<no output>" );
+	    $log->error("Output from PHP engine: (" . $self->name . 
+			"):\n\n" . ($OUTPUT // "<no output>") . "\n");
 	} else {
-	    $log->error("Output from PHP engine: "
-				. length($OUTPUT) . " bytes");
+	    $log->error("Output from PHP engine (" . $self->name . "): "
+			. length($OUTPUT) . " bytes");
 	}
-	$log->error("PHP error: $@");
+	$log->error("PHP error from template " . $self->name . ": $@");
 
 	# when does $@ indicate a serious (server) error,
 	# and when can it be ignored? The value of $@ is often
@@ -333,9 +334,10 @@ sub _mojoparams_to_phpparams {
 
 
     # The conventional ways to parse input parameters with Perl (CGI/Catalyst)
-    # are different from the way that PHP parses the input. Some examples:
+    # are different from the way that PHP parses the input, and we may need
+    # to translate the Perl-style parameters to PHP-style. Some examples:
     #
-    # 1. foo=first&foo=second&foo=lats
+    # 1. foo=first&foo=second&foo=last
     #
     #    In Perl, value for the parameter 'foo' is an array ref with 3 values
     #    In PHP, value for param 'foo' is 'last', whatever the last value was
