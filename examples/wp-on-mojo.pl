@@ -1,5 +1,5 @@
 # wp-on-mojo.pl: run WordPress on Mojolicious in 34 lines of code
-# (29 if you take out the stuff about bitches)
+# (28 if you take out the stuff about bitches)
 # morbo wp-on-mojo.pl [wp-dir]  or  hypnotoad wp-on-mojo.pl [wp-dir]
 package MojoX::WordPress;
 use Mojolicious::Lite;
@@ -8,7 +8,9 @@ use Mojolicious::Lite;
 $WordPress::Home = $ARGV[0] || ".../wordpress";
 
 plugin 'MojoX::Plugin::PHP', {
+    use_index_php => 1,
     php_var_preprocessor => sub {
+	$DB::single = 1;
 	$_[0]->{_SERVER}{BITCHES} = "Yeah, WordPress on Mojolicious, bitches!";
 	PHP::call('set_include_path', $WordPress::Home);
     },
@@ -30,7 +32,9 @@ get '/bitches' => sub {
 
 push @{app->static->paths}, $WordPress::Home;
 
-app->secret('wordpress on mojolicious, bitches');
+app->log( Mojo::Log->new( path => 'wp-on-mojo.log' ) );
+my $secret = 'wordpress on mojolicious, bitches';
+$Mojolicious::VERSION > 4.62 ? app->secrets([$secret]):app->secret($secret);
 app->start;
 
 =head1 NAME
@@ -41,7 +45,7 @@ wp-on-mojo.pl - WordPress on Mojolicious (bitches)
 
 =over 4
 
-=item 0. Install the L<MojoX::Plugin::PHP> module on your 
+=item 0. Install the L<MojoX::Plugin::PHP> module on your system
 
 =item 1. If you already have a working WordPress installation on your
 host, skip ahead to step 3. Otherwise download and unpack some version

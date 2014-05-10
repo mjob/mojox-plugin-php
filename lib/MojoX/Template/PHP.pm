@@ -153,8 +153,8 @@ sub interpret {
     }
 
     if ($@) {
-	if (length($OUTPUT || "") < 1000) {
-	    $log->error("Output from PHP engine:\n-------------------");
+	if (length($OUTPUT || "") < 1000 || DEBUG) {
+	    $log->error("Output from PHP engine:\n\t\t-------------------");
 	    $log->error( $OUTPUT || "<no output>" );
 	} else {
 	    $log->error("Output from PHP engine: "

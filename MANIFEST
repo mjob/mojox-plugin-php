@@ -92,3 +92,4 @@ t/templates/upload1.php
 t/templates/vars.php
 t/templates/warnings.php
 t/testapp.conf
+examples/wp-on-mojo.pl
