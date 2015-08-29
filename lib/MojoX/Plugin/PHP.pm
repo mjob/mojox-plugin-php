@@ -485,7 +485,7 @@ Marty O'Brien E<lt>mob@cpan.orgE<gt>
 
 =head1 COPYRIGHT
 
-Copyright 2013-2014, Marty O'Brien. All rights reserved.
+Copyright 2013-2015, Marty O'Brien. All rights reserved.
 
 This library is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published

@@ -13,5 +13,5 @@ Revision history for MojoX-Plugin-PHP
 	Include examples/wp-on-mojo.pl demo script
 	Minor redesign of error output in MojoX::Template::PHP
 
-0.04	...
+0.04	2015-08-28
 	Updates for Mojolicious 6.xx compatibilty
