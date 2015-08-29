@@ -14,7 +14,7 @@ BEGIN {
 require_ok( 'Mojolicious' );
 require_ok( 'PHP' );
 
-diag( "Testing MojoX::Plugin::PHP $MojoX::Plugin::PHP::VERSION" );
+diag( "\nTesting MojoX::Plugin::PHP $MojoX::Plugin::PHP::VERSION" );
 diag( "\tPerl $], $^X" );
 diag( "\tMojolicious version $Mojolicious::VERSION" );
 diag( "\tp5-php version $PHP::VERSION" );
