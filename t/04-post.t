@@ -197,6 +197,7 @@ ok( $content =~ /_REQUEST = array.*post.*36.*_SERVER/s,
 ok( $content =~ /_REQUEST = .*foo.*array.*0.*567.*_SERVER/s &&
     $content =~ /_REQUEST = .*foo.*array.*2.*678.*_SERVER/s &&
     $content =~ /_REQUEST = .*foo.*array.*1.*789.*_SERVER/s,
-    '$_REQUEST contains array "foo"' );
+    '$_REQUEST contains array "foo"' )
+or diag $content;
 
 done_testing();

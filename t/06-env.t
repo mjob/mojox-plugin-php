@@ -23,6 +23,7 @@ sub array {
     my $key_count = 0;
     while (my ($k,$v) = each %ENV) {
 	$key_count++;
+	$v //= "";
 	next if $v =~ /\n/;
 	ok( grep(/\Q$k\E.*=>.*\Q$v\E/,@env), "ENV $k ok" );
     }

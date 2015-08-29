@@ -420,7 +420,7 @@ variable.
     sub my_header_processor {
         my ($field,$value,$replace) = @_;
         if ($field eq 'X-collatz') {
-            my $payload = Mojo::JSON->new->decode($value);
+            my $payload = Mojo::JSON::decode_json($value);
             my $n = $payload->{n};
 	    my $result_var = $payload->{result};
             $n = 3 * $n + 1;

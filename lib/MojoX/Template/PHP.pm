@@ -276,9 +276,6 @@ sub _files_params {
 
 sub _cookie_params {
     my ($self, $c) = @_;
-    if (@{$c->req->cookies}) {
-	$DB::single = 'cookies!';
-    }
 
     # Mojo: $c->req->cookies is [], in Catalyst it is {}
     my $p = { 
@@ -324,9 +321,17 @@ sub _server_params {
 sub _mojoparams_to_phpparams {
     my ($query, @order) = @_;
     my $existing_params = {};
-    foreach my $name ($query->param) {
-	my @p = $query->param($name);
-	$existing_params->{$name} = @p > 1 ? [ @p ] : $p[0];
+    if ($Mojolicious::VERSION >= 6.00) {
+	my $p = $query->to_hash;
+	while (my ($k,$v) = each %$p) {
+	    $existing_params->{$k} = $v;
+	}
+    } else {
+	my @names = $query->param;
+	foreach my $name (@names) {
+	    my @p = $query->param($name);
+	    $existing_params->{$name} = @p > 1 ? [ @p ] : $p[0];
+	}
     }
 
     # XXX - what if parameter value is a Mojo::Upload ? Do we still
@@ -416,9 +421,10 @@ sub _set_get_post_request_params {
 		 $c->req->url->query, @order );
 	}
     }
-
     if ($var_order =~ /P/ && $c->req->method eq 'POST') {
-	my $order = [ $c->req->body_params->param ];
+	my $order = $Mojolicious::VERSION >= 6.00 
+		      ? $c->req->body_params->names
+		      : [ $c->req->body_params->param ];
 	$params->{_POST} = _mojoparams_to_phpparams(
 	    $c->req->body_params, @$order );
     }

@@ -2,6 +2,7 @@ use Test::More;
 use Test::Mojo;
 use strict;
 use warnings;
+use Mojo::URL;
 use Data::Dumper; $Data::Dumper::Indent=$Data::Dumper::Sortkeys=1;
 
 my $t = Test::Mojo->new( 't::MojoTestServer' );
@@ -13,13 +14,13 @@ sub request_with_redirect {
     $t->get_ok( @args );
     my $response = $t->tx->res;
     if ($response->headers->header('location')) {
-	use URI;
+#	use URI;
 	my $location = $response->headers->header('location');
 	if (ref $location) {
 	    $location = $location->[0];
 	}
-	my $uri = URI->new( $location );
-	$t->get_ok( $uri->path );
+	my $uri = Mojo::URL->new( $location );
+	$t->get_ok( "" . $uri->path );
 	$response = $t->tx->res;
     }
     return $response;

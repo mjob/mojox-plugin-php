@@ -12,10 +12,21 @@ $t->get_ok('/')->status_is(200)->content_is( 'This is t::MojoTestServer' );
 my $cookie_jar = $t->ua->cookie_jar;
 my $cookie_url = Mojo::URL->new( 'http://localhost/' );
 my @cookies = $cookie_jar->find( $cookie_url );
+if ($Mojolicious::VERSION >= 6.00) {
+    @cookies = @{$cookies[0]};
+}
 ok( @cookies == 0, 'initial cookie jar is empty' );
 
 $t->get_ok('/set-cookie.php')->status_is(200);
 @cookies = $cookie_jar->find( $cookie_url );
+if ($Mojolicious::VERSION >= 6.00) {
+    @cookies = @{$cookies[0]};
+}
+if (@cookies == 0) {
+    $cookie_url = Mojo::URL->new('http://127.0.0.1/');
+    @cookies = $cookie_jar->find( $cookie_url );
+    @cookies = @{$cookies[0]} if $Mojolicious::VERSION >= 6.00;
+}
 ok( @cookies >= 2, 'cookies set with /set-cookie.php' );
 foreach my $cookie (@cookies) {
     if ($cookie->name eq 'cookie1') {
@@ -35,6 +46,9 @@ $t->get_ok('/get-cookie.php')->status_is(200)
 
 $t->get_ok('/clear-cookie.php')->status_is(200);
 @cookies = $cookie_jar->find( $cookie_url );
+if ($Mojolicious::VERSION >= 6.00) {
+    @cookies = @{$cookies[0]};
+}
 ok( @cookies == 0, 'all cookies are cleared' );
 
 $t->get_ok('/get-cookie.php')->status_is(200)

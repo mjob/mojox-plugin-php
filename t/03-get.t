@@ -37,6 +37,8 @@ ok( $content =~ /_ENV = array/ &&
     $content !~ /_ENV = array *\(\s*\)/, '$_ENV not empty' );
 ok( $content =~ /_COOKIE = array *\(\s*\)/, '$_COOKIE is empty' );
 
+
+
 # when PHP receives a duplicate value, it should ignore all values 
 # except the last one
 $t->get_ok('/vars.php?abc=123&def=456&abc=789')->status_is(200, 'vars.php request (2) query');

@@ -33,11 +33,15 @@ sub _var_preprocessor {
     }
 }
 
+if ($Mojolicious::VERSION < 4.62) {
+    *Mojo::JSON::decode_json = sub { Mojo::JSON->new->decode($_[0]) }
+}
+
 # used in t/10-compute.t
 sub _compute_from_header {
     my ($key, $payload, $c) = @_;
     if ($key eq 'X-compute') {
-	$payload = eval { Mojo::JSON->new->decode($payload) };
+	$payload = eval { Mojo::JSON::decode_json($payload) };
 	if ($@) {
 	    PHP::assign_global( 'Perl_compute_result', $@ );
 	    return;
@@ -53,7 +57,7 @@ sub _compute_from_header {
 	return 0;
     } elsif ($key eq 'X-collatz') {
 	# see t/collatz2.php, pod for MojoX::Plugin::PHP
-	$payload = eval { Mojo::JSON->new->decode($payload) };
+	$payload = eval { Mojo::JSON::decode_json($payload) };
 	if ($@) {
 	    PHP::assign_global( 'Perl_result', $@ );
 	    return;
