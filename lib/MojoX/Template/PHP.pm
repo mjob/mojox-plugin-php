@@ -62,11 +62,8 @@ sub interpret {
 
     $self->_set_get_post_request_params( $c, $params, $variables_order );
 
-    # XXX - should we always set $HTTP_RAW_POST_DATA?
-    my $input = $c->req->body;
-    if (my $len = length($input)) {
-	PHP::set_php_input( "$input" );
-	$params->{HTTP_RAW_POST_DATA} = "$input";
+    if (length($c->req->body)) {
+	$params->{HTTP_RAW_POST_DATA} = $c->req->body;
     }
 
     # hook to make adjustments to  %$params
@@ -89,6 +86,7 @@ sub interpret {
     }
     $c && $c->stash( 'php_params', $params );
 
+    _set_php_input($c, $params);
 
     my $OUTPUT;
     my $ERROR = "";
@@ -199,7 +197,8 @@ sub interpret {
 	if (!$c->res->code) {
 	    $c->res->code(302);
 	} elsif (500 == $c->res->code) {
-	    $log->info("changing response code from 500 to 302 because there's a location header");
+	    $log->info("changing response code from 500 to 302 "
+		       . "because there's a location header");
 	    $c->res->code(302);
 	    $log->info("output is\n\n" . $output);
 	    $log->info("active exception msg is: " . ($@ || ""));
@@ -209,6 +208,16 @@ sub interpret {
 
     return $output unless $@;
     return Mojo::Exception->new( $@, [$self->template, $self->code] );
+}
+
+sub _set_php_input {
+    my ($c, $params) = @_;
+    my $input = $c->req->body;
+    if (length($input)) {
+	PHP::set_php_input( "$input" );
+	$params->{HTTP_RAW_POST_DATA} = $input;
+    }
+    return;
 }
 
 sub _get_upload_metadata {
@@ -276,6 +285,8 @@ sub _files_params {
 
 sub _cookie_params {
     my ($self, $c) = @_;
+
+    $DB::single = 1;
 
     # Mojo: $c->req->cookies is [], in Catalyst it is {}
     my $p = { 

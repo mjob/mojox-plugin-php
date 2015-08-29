@@ -11,7 +11,8 @@ my $content = $t->tx->res->body;
 my ($server) = $content =~ /\$_SERVER = array *\((.*)\)\s*\$_ENV/s;
 my @server = split /\n/, $server;
 
-ok( (grep { /SERVER_PROTOCOL.*HTTP[^S]/ } @server ), '$_SERVER{SERVER_PROTOCOL}' );
+ok( (grep { /SERVER_PROTOCOL.*HTTP[^S]/ } @server ),
+    '$_SERVER{SERVER_PROTOCOL}' );
 ok( (grep { /REQUEST_METHOD.*GET/ } @server ), '$_SERVER{REQUEST_METHOD}' );
 ok( (grep { /REQUEST_URI.*vars.php/ } @server), '$_SERVER{REQUEST_URI}' );
 

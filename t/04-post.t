@@ -50,8 +50,10 @@ $content = $t->tx->res->body;
 
 ok( $content =~ /_GET = array *\(\s*\)/, '$_GET is empty' );
 ok( $content !~ /_POST = array *\(\s*\)/, '$_POST not empty' ); 
-ok( $content !~ /_POST.*abc.*=.*123.*_REQUEST/s, 'lost first val for $_POST["abc"]');
-ok( $content =~ /_POST.*abc.*=.*789.*_REQUEST/s, 'got last val for $_POST["abc"]');
+ok( $content !~ /_POST.*abc.*=.*123.*_REQUEST/s,
+    'lost first val for $_POST["abc"]');
+ok( $content =~ /_POST.*abc.*=.*789.*_REQUEST/s,
+    'got last val for $_POST["abc"]');
 ok( $content =~ /_POST.*def.*=.*456.*_REQUEST/s, '$_POST["def"] ok');
 ok( $content !~ /_REQUEST = array *\(\s*\)/, '$_REQUEST not empty' );
 ok( $content !~ /_REQUEST.*abc.*=.*123.*_SERVER/s &&
@@ -100,7 +102,8 @@ ok( $content =~ /_COOKIE = array *\(\s*\)/, '$_COOKIE is empty' );
 
 
 # 2-level hash
-$t->post_ok( '/vars.php', form => { 'foo[4][x]' => 7, 'foo[4][y]' => 8, 'foo[5][z]' => 9 } );
+$t->post_ok( '/vars.php', form => { 'foo[4][x]' => 7,
+				    'foo[4][y]' => 8, 'foo[5][z]' => 9 } );
 $t->status_is(200);
 $content = $t->tx->res->body;
 ok( $content =~ /_GET = array *\(\s*\)/, '$_GET is empty' );
@@ -134,7 +137,8 @@ ok( $content =~ /_COOKIE = array *\(\s*\)/, '$_COOKIE is empty' );
 
 # POST + query string
 $t->post_ok( '/vars.php?get=7&foo=14',
-	     form => { 'foo[r]' => 's', 'post' => 19, 'foo[t]' => 'u', 'foo[v]' => 'w' } );
+	     form => { 'foo[r]' => 's', 'post' => 19,
+		       'foo[t]' => 'u', 'foo[v]' => 'w' } );
 $t->status_is(200);
 $content = $t->tx->res->body;
 #    $response = request POST 'http://localhost/vars.php?get=7&foo=14', [

@@ -73,12 +73,17 @@ $content = $t->tx->res->body;
 
 ok( $content,  'got content for POST with file upload' );
 ok( $content =~ /\$_FILES =/, 'content looks like correct format' );
-ok( $content =~ /\bmy_file1\b/, 'content got correct 1st file upload param name' );
-ok( $content =~ /\bmy_file2\b/, 'content got correct 2nd file upload param name' );
+ok( $content =~ /\bmy_file1\b/,
+    'content got correct 1st file upload param name' );
+ok( $content =~ /\bmy_file2\b/,
+    'content got correct 2nd file upload param name' );
 
-#ok( $content =~ /my_file1.*\bname\b\W*test_file_namex/s, 'file upload recorded filename1' );
-ok( $content =~ /my_file1.*\bname\b\W*testapp.conf/s, 'file upload recorded filename1' );
-ok( $content =~ /my_file2.*\bname\b\W*manifest/si, 'file upload recorded filename2' );
+#ok( $content =~ /my_file1.*\bname\b\W*test_file_namex/s,
+#    'file upload recorded filename1' );
+ok( $content =~ /my_file1.*\bname\b\W*testapp.conf/s,
+    'file upload recorded filename1' );
+ok( $content =~ /my_file2.*\bname\b\W*manifest/si,
+    'file upload recorded filename2' );
 
 ok( $content =~ /size\D*$size\b/,
     'file upload recorded correct file1 size' );

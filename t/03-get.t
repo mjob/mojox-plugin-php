@@ -9,7 +9,7 @@ $Data::Dumper::Indent = $Data::Dumper::Sortkeys = 1;
 my $t = Test::Mojo->new( 't::MojoTestServer' );
 $t->get_ok('/')->status_is(200)->content_is('This is t::MojoTestServer');
 
-# vars.php: dump PHP $_GET, $_POST, $_REQUEST, $_SERVER, $_ENV, $_COOKIE, $_FILES vars
+# vars.php: dump PHP $_GET,$_POST,$_REQUEST,$_SERVER,$_ENV,$_COOKIE,$_FILES
 $t->get_ok('/vars.php')->status_is(200, 'data returned for vars.php')
     ->content_like( qr/_GET = array *\(\s*\)/, '$_GET is empty' )
     ->content_like( qr/_POST = array *\(\s*\)/, '$_POST is empty' )
@@ -21,7 +21,8 @@ $t->get_ok('/vars.php')->status_is(200, 'data returned for vars.php')
     ->content_like( qr/_COOKIE = array *\(\s*\)/, '$_COOKIE is empty' )
     ->content_like( qr/_GET = array *\(\s*\)/, '$_GET is empty' );
 
-$t->get_ok('/vars.php?abc=123&def=456')->status_is(200, 'vars.php request with query');
+$t->get_ok('/vars.php?abc=123&def=456')
+    ->status_is(200, 'vars.php request with query');
 my $content = $t->tx->res->body;
 ok( $content !~ /_GET = array *\(\s*\)/, '$_GET not empty' );
 ok( $content =~ /_GET.*abc.*=.*123.*_POST/s, '$_GET["abc"] ok');
@@ -41,7 +42,8 @@ ok( $content =~ /_COOKIE = array *\(\s*\)/, '$_COOKIE is empty' );
 
 # when PHP receives a duplicate value, it should ignore all values 
 # except the last one
-$t->get_ok('/vars.php?abc=123&def=456&abc=789')->status_is(200, 'vars.php request (2) query');
+$t->get_ok('/vars.php?abc=123&def=456&abc=789')
+    ->status_is(200, 'vars.php request (2) query');
 $content = $t->tx->res->body;
 ok( $content !~ /_GET = array *\(\s*\)/, '$_GET not empty' ); 
 ok( $content !~ /_GET.*abc.*=.*123.*_POST/s, 'lost first val for $_GET["abc"]');

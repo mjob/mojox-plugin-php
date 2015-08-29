@@ -24,7 +24,8 @@ ok($version, "phpinfo for version $version");
 ok( $phpinfo_content =~ /Directive.*Local Value.*Master Value/si,
     'phpinfo contains directive list');
 if ($version && $version lt '5.4.0') {
-    ok( $phpinfo_content =~ /magic_quotes_gpc/, 'phpinfo contains config data' );
+    ok( $phpinfo_content =~ /magic_quotes_gpc/,
+	'phpinfo contains config data' );
 }
 ok( $phpinfo_content =~ /Variable.*Value/, 'phpinfo contains variable data' );
 ok( $phpinfo_content =~ /_SERVER/ && $phpinfo_content =~ /_ENV/,
