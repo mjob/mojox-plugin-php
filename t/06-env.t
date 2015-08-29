@@ -22,7 +22,7 @@ sub array {
     my @env = split /\n/, $env;
 
     my $key_count = 0;
-    my @fail = 0;
+    my @fail = ();
     while (my ($k,$v) = each %ENV) {
 	$key_count++;
 	$v //= "";
