@@ -8,7 +8,7 @@ use Data::Dumper;
 $Data::Dumper::Indent = 1;
 $Data::Dumper::Sortkeys = 1;
 
-our $VERSION = '0.04';
+our $VERSION = '0.04_01';
 my $php_req_handler_path = sprintf "/php-handler-%07x", 0x10000000 * rand();
 
 sub register {
@@ -152,7 +152,7 @@ MojoX::Plugin::PHP - use PHP as a templating system in Mojolicious
 
 =head1 VERSION
 
-0.04
+0.04_01
 
 =head1 WTF
 
@@ -331,7 +331,8 @@ Register the php renderer in L<Mojolicious> application.
 
 =head1 COMMUNICATION BETWEEN PERL AND PHP
 
-As mentioned in the L<"php_header_processor" documentation in the CONFIG section above|"php_header_processor">,
+As mentioned in the L<"php_header_processor" documentation in the 
+CONFIG section above|"php_header_processor">,
 it is possible to use the header callback mechanism to execute
 arbitrary Perl code from PHP and to establish a communication channel
 between your PHP scripts and your Mojolicious application.

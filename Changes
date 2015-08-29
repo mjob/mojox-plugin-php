@@ -15,3 +15,6 @@ Revision history for MojoX-Plugin-PHP
 
 0.04	2015-08-28
 	Updates for Mojolicious 6.xx compatibilty
+
+0.05	...
+	Fix _mojoparams_to_phpparams for all Mojolicious versions

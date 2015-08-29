@@ -13,7 +13,7 @@ use constant DEBUG =>   # not used ...
 use Data::Dumper;
 $Data::Dumper::Indent = $Data::Dumper::Sortkeys = 1;
 
-our $VERSION = '0.04';
+our $VERSION = '0.04_01';
 
 #has [qw(auto_escape)];
 has [qw(code include_file)] => '';
@@ -286,8 +286,6 @@ sub _files_params {
 sub _cookie_params {
     my ($self, $c) = @_;
 
-    $DB::single = 1;
-
     # Mojo: $c->req->cookies is [], in Catalyst it is {}
     my $p = { 
 	map {;
@@ -318,7 +316,8 @@ sub _server_params {
 	PATH_INFO => $req->{__old_path} || $req->url->path->to_string,
 	QUERY_STRING => $req->url->query->to_string,
 	REMOTE_ADDR => $tx->remote_address,
-	REMOTE_HOST => gethostbyaddr( inet_aton( $tx->remote_address ), AF_INET ) || '',
+	REMOTE_HOST => gethostbyaddr( inet_aton( $tx->remote_address ),
+				      AF_INET ) || '',
 	REMOTE_PORT => $tx->remote_port,
 	REQUEST_METHOD => $req->method,
 	REQUEST_URI => $req->url->to_string,
@@ -332,21 +331,21 @@ sub _server_params {
 sub _mojoparams_to_phpparams {
     my ($query, @order) = @_;
     my $existing_params = {};
-    if ($Mojolicious::VERSION >= 6.00) {
-	my $p = $query->to_hash;
-	while (my ($k,$v) = each %$p) {
-	    $existing_params->{$k} = $v;
-	}
-    } else {
-	my @names = $query->param;
-	foreach my $name (@names) {
-	    my @p = $query->param($name);
-	    $existing_params->{$name} = @p > 1 ? [ @p ] : $p[0];
-	}
+
+    # .. was using Mojo::Parameters::param here, which stopped working
+    # with Mojolicious 6.00 (and possibly earliers), but
+    # Mojo::Parameters::to_hash also works, even for older Mojoliciouses
+    my $p = $query->to_hash;
+    while (my ($k,$v) = each %$p) {
+	$existing_params->{$k} = $v;
     }
+
 
     # XXX - what if parameter value is a Mojo::Upload ? Do we still
     #       save it in the $_GET/$_POST array?
+
+
+
 
 
     # The conventional ways to parse input parameters with Perl (CGI/Catalyst)
@@ -505,7 +504,7 @@ MojoX::Template::PHP - PHP processing engine for MojoX::Plugin::PHP
 
 =head1 VERSION
 
-0.04
+0.04_01
 
 =head1 SYNOPSIS
 
