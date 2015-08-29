@@ -2,6 +2,7 @@ use Test::More;
 use Test::Mojo;
 use strict;
 use warnings;
+use Data::Dumper;
 
 sub array {
     return { @_ };
@@ -21,11 +22,17 @@ sub array {
     my @env = split /\n/, $env;
 
     my $key_count = 0;
+    my @fail = 0;
     while (my ($k,$v) = each %ENV) {
 	$key_count++;
 	$v //= "";
 	next if $v =~ /\n/;
-	ok( grep(/\Q$k\E.*=>.*\Q$v\E/,@env), "ENV $k ok" );
+	ok( grep(/\Q$k\E.*=>.*\Q$v\E/,@env), "ENV $k ok" )
+	    or push @fail, [$k, $v];
+    }
+    if (@fail) {
+	diag "extracted \$_ENV is $env",
+	     "Failed matches are:", Dumper(\@fail);
     }
     ok( $key_count > 2, "at least some env vars found ($key_count)" );
 }
